@@ -22,6 +22,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
+          artifact_name: micahconsulting
 
   deploy:
     needs: build
@@ -35,3 +36,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v3
+        with:
+          artifact_name: micahconsulting
