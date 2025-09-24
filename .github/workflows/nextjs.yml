@@ -19,7 +19,6 @@ jobs:
           node-version: '18'
       - run: npm ci
       - run: npm run build
-      - run: npx next export
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
