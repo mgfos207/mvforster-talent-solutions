@@ -29,16 +29,20 @@ export default function Home() {
               We specialize in placing top-tier professionals in software engineering, data science, 
               and technical leadership roles.
             </p>
-            <div className="flex gap-6 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
               <a
                 href="#contact"
-                className="inline-block bg-primary text-white px-10 py-4 rounded-lg hover:bg-primary-dark transition-colors text-lg font-medium"
+                className="inline-flex items-center justify-center bg-primary text-white px-8 sm:px-10 py-4 rounded-lg hover:bg-primary-dark focus:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-medium shadow-lg hover:shadow-xl active:scale-95"
+                role="button"
+                aria-label="Contact us to hire talent"
               >
                 Hire Talent
               </a>
               <a
                 href="#jobs"
-                className="inline-block bg-white text-primary px-10 py-4 rounded-lg hover:bg-gray-100 transition-colors text-lg font-medium"
+                className="inline-flex items-center justify-center bg-white text-primary px-8 sm:px-10 py-4 rounded-lg hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-medium shadow-lg hover:shadow-xl active:scale-95"
+                role="button"
+                aria-label="Browse available job positions"
               >
                 Find Jobs
               </a>
