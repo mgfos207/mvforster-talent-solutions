@@ -32,7 +32,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center bg-primary text-white px-8 sm:px-10 py-4 rounded-lg hover:bg-primary-dark focus:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-medium shadow-lg hover:shadow-xl active:scale-95"
+                className="inline-flex items-center justify-center bg-white text-primary px-8 sm:px-10 py-4 rounded-lg hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
                 role="button"
                 aria-label="Contact us to hire talent"
               >
@@ -40,7 +40,7 @@ export default function Home() {
               </a>
               <a
                 href="#jobs"
-                className="inline-flex items-center justify-center bg-white text-primary px-8 sm:px-10 py-4 rounded-lg hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-medium shadow-lg hover:shadow-xl active:scale-95"
+                className="inline-flex items-center justify-center bg-primary text-white px-8 sm:px-10 py-4 rounded-lg hover:bg-primary-dark focus:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
                 role="button"
                 aria-label="Browse available job positions"
               >
@@ -64,13 +64,13 @@ export default function Home() {
                 <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technical Recruitment</h3>
                 <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Expert placement services for software engineers, developers, and technical leaders.</p>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
+              {/* <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
                 <div className="mb-6">
                   <Image src="/window.svg" alt="Talent Assessment" width={48} height={48} className="text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Talent Assessment</h3>
                 <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Comprehensive evaluation of technical skills and cultural fit.</p>
-              </div>
+              </div> */}
               <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
                 <div className="mb-6">
                   <Image src="/file.svg" alt="Career Guidance" width={48} height={48} className="text-primary" />
