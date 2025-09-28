@@ -220,7 +220,7 @@ export default function Home() {
               </div>
               <div className="relative">
                 <Image
-                  src="/micah-night-city.jpg"
+                  src="/micah-night-city.png"
                   alt="Micah Forster - Talent Solutions"
                   width={600}
                   height={900}
