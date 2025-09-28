@@ -32,7 +32,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center bg-white text-primary px-8 sm:px-10 py-4 rounded-md border-2 border-white hover:bg-transparent hover:text-white focus:bg-transparent focus:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
+                className="inline-flex items-center justify-center bg-gray-800 text-primary px-8 sm:px-10 py-4 rounded-md border-2 border-white hover:bg-transparent hover:text-white focus:bg-transparent focus:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
                 role="button"
                 aria-label="Contact us to hire talent"
               >
@@ -40,7 +40,7 @@ export default function Home() {
               </a>
               <a
                 href="#jobs"
-                className="inline-flex items-center justify-center bg-gray-800 text-white px-8 sm:px-10 py-4 rounded-md border-2 border-white hover:bg-white hover:text-primary focus:bg-white focus:text-primary focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
+                className="inline-flex items-center justify-center bg-gray-800 text-white px-8 sm:px-10 py-4 rounded-md border-2 border-white hover:bg-transparent hover:text-primary focus:bg-white focus:text-primary focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
                 role="button"
                 aria-label="Browse available job positions"
               >
@@ -106,6 +106,10 @@ export default function Home() {
                     <span className="text-primary">•</span>
                     Security & Infrastructure
                   </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Generative AI (Agentic Workflows)
+                  </li>
                 </ul>
               </div>
               <div className="space-y-8">
@@ -127,6 +131,10 @@ export default function Home() {
                     <span className="text-primary">•</span>
                     Data Scientists & ML Engineers
                   </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    AI Engineers
+                  </li>                  
                 </ul>
               </div>
             </div>
