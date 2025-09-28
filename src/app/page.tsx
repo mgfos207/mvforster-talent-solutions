@@ -220,10 +220,10 @@ export default function Home() {
               </div>
               <div className="relative">
                 <Image
-                  src="/family/family1.jpg"
-                  alt="Team Collaboration"
+                  src="/micah-night-city.jpg"
+                  alt="Micah Forster - Talent Solutions"
                   width={600}
-                  height={400}
+                  height={900}
                   className="rounded-lg shadow-lg object-cover"
                 />
               </div>
