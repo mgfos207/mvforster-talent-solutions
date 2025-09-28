@@ -14,8 +14,8 @@ export default function About() {
                 Micah Forster
               </h1>
               <p className="text-xl text-gray-700 dark:text-gray-200 mb-8">
-                Senior Global Talent Acquisition Manager with over 7 years of experience in technical recruiting,
-                specializing in building high-performance engineering teams across different markets and time zones.
+                Customer Success Engineer and Software Developer with experience in cloud infrastructure, software development, and database management. 
+                Specializing in delivering exceptional customer experiences and technical solutions.
               </p>
               <div className="flex gap-4">
                 <a
@@ -33,11 +33,11 @@ export default function About() {
             </div>
             <div className="relative">
               <Image
-                src="/micah-forster-recruitment.jpeg"
+                src="/micah-night-city.jpg"
                 alt="Micah Forster"
                 width={400}
                 height={400}
-                className="rounded-lg shadow-xl"
+                className="rounded-lg shadow-xl object-cover"
               />
             </div>
           </div>
@@ -53,23 +53,23 @@ export default function About() {
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
               <div className="flex flex-col md:flex-row justify-between mb-4">
                 <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
-                  Senior Global Talent Acquisition Manager
+                  Customer Success Engineer
                 </h3>
-                <span className="text-gray-600 dark:text-gray-400">2022 - Present</span>
+                <span className="text-gray-600 dark:text-gray-400">September 2023 - Present</span>
               </div>
-              <h4 className="text-xl text-primary mb-4">GitHub</h4>
+              <h4 className="text-xl text-primary mb-4">Wiz</h4>
               <ul className="space-y-3 text-gray-700 dark:text-gray-200">
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Led technical recruitment for GitHub's engineering teams globally
+                  Managed the technical implementation of the Wiz platform across customer cloud environments
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Successfully managed high-volume recruitment, delivering 150+ technical hires annually
+                  Built strong customer relationships with Fortune 500 companies, advising on cloud security best practices
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Implemented innovative sourcing strategies resulting in a 40% reduction in time-to-hire
+                  Collaborated with Product and Engineering teams to enhance the Wiz platform based on customer feedback
                 </li>
               </ul>
             </div>
@@ -77,23 +77,71 @@ export default function About() {
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
               <div className="flex flex-col md:flex-row justify-between mb-4">
                 <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
-                  Technical Recruiting Lead
+                  Technical Implementation Specialist
                 </h3>
-                <span className="text-gray-600 dark:text-gray-400">2018 - 2022</span>
+                <span className="text-gray-600 dark:text-gray-400">May 2022 - September 2023</span>
               </div>
-              <h4 className="text-xl text-primary mb-4">Microsoft</h4>
+              <h4 className="text-xl text-primary mb-4">Appsembler Inc</h4>
               <ul className="space-y-3 text-gray-700 dark:text-gray-200">
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Built and led a team of technical recruiters, achieving 125% of hiring targets
+                  Served as the technical lead managing implementation projects for the Tahoe platform
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Developed and implemented technical assessment frameworks
+                  Developed integrations between Open edX platform and client systems using Python and JavaScript
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Established strong partnerships with engineering leadership and hiring managers
+                  Created and delivered technical training to clients on platform capabilities and customization
+                </li>
+              </ul>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="flex flex-col md:flex-row justify-between mb-4">
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
+                  Software Developer
+                </h3>
+                <span className="text-gray-600 dark:text-gray-400">May 2021 - May 2022</span>
+              </div>
+              <h4 className="text-xl text-primary mb-4">InstaBase</h4>
+              <ul className="space-y-3 text-gray-700 dark:text-gray-200">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Built capabilities in the InstaBase platform to deliver customized solutions for Fortune 500 clients
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Developed document processing and classification workflows using Python and SQL
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Collaborated with UX/UI design team to improve platform functionality and user experience
+                </li>
+              </ul>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="flex flex-col md:flex-row justify-between mb-4">
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
+                  Software Engineer
+                </h3>
+                <span className="text-gray-600 dark:text-gray-400">July 2020 - May 2021</span>
+              </div>
+              <h4 className="text-xl text-primary mb-4">Talroo</h4>
+              <ul className="space-y-3 text-gray-700 dark:text-gray-200">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Maintained and enhanced job search API and database architecture using Java and PostgreSQL
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Implemented performance improvements to search algorithms that increased search speed by 20%
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Worked with the product team to implement new features based on user feedback and business needs
                 </li>
               </ul>
             </div>
@@ -108,45 +156,45 @@ export default function About() {
           
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
-              <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technical Domains</h3>
+              <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technical Skills</h3>
               <ul className="space-y-3 text-gray-700 dark:text-gray-200">
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Full Stack Development (JavaScript/TypeScript, Python, Java)
+                  Languages: Python, JavaScript, Java, SQL
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Cloud Technologies (AWS, Azure, GCP)
+                  Cloud: AWS, Azure, GCP, Kubernetes
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  DevOps & Infrastructure
+                  Web: React, Node.js, HTML/CSS
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Machine Learning & AI
+                  Databases: PostgreSQL, MySQL, MongoDB
                 </li>
               </ul>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
-              <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Recruitment Expertise</h3>
+              <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Professional Skills</h3>
               <ul className="space-y-3 text-gray-700 dark:text-gray-200">
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Technical Assessment & Evaluation
+                  Customer Success Management
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Global Talent Acquisition
+                  Project Implementation
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Diversity & Inclusion Initiatives
+                  Technical Documentation
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-primary">•</span>
-                  Strategic Workforce Planning
+                  Client Training & Enablement
                 </li>
               </ul>
             </div>
@@ -154,23 +202,45 @@ export default function About() {
         </div>
       </section>
 
-      {/* Achievements Section */}
+      {/* Education Section */}
       <section className="py-20">
         <div className="container mx-auto max-w-6xl px-6">
-          <h2 className="text-3xl font-bold mb-12 text-primary dark:text-primary-light">Key Achievements</h2>
+          <h2 className="text-3xl font-bold mb-12 text-primary dark:text-primary-light">Education</h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
-              <div className="text-4xl font-bold text-primary dark:text-primary-light mb-4">150+</div>
-              <p className="text-lg text-gray-700 dark:text-gray-200">Technical Hires Annually</p>
+          <div className="space-y-12">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="flex flex-col md:flex-row justify-between mb-4">
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
+                  Bachelor of Science in Computer Science
+                </h3>
+                <span className="text-gray-600 dark:text-gray-400">2016 - 2020</span>
+              </div>
+              <h4 className="text-xl text-primary mb-4">The University of Texas at Austin</h4>
+              <p className="text-lg text-gray-700 dark:text-gray-200">
+                Graduated with a focus on software engineering and database systems. Participated in competitive programming teams and hackathons.
+              </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
-              <div className="text-4xl font-bold text-primary dark:text-primary-light mb-4">92%</div>
-              <p className="text-lg text-gray-700 dark:text-gray-200">First Year Retention Rate</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-center">
-              <div className="text-4xl font-bold text-primary dark:text-primary-light mb-4">40%</div>
-              <p className="text-lg text-gray-700 dark:text-gray-200">Reduced Time-to-Hire</p>
+            
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <div className="flex flex-col md:flex-row justify-between mb-4">
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
+                  Certifications
+                </h3>
+              </div>
+              <ul className="space-y-3 text-gray-700 dark:text-gray-200">
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  AWS Certified Solutions Architect
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Microsoft Azure Fundamentals
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-primary mt-1.5">•</span>
+                  Certified Kubernetes Administrator
+                </li>
+              </ul>
             </div>
           </div>
         </div>
