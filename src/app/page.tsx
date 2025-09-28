@@ -56,7 +56,7 @@ export default function Home() {
         <section id="services" className="py-20 bg-gray-50 dark:bg-gray-900">
           <div className="container mx-auto max-w-6xl px-6">
             <h2 className="text-4xl font-bold text-center mb-16 text-primary dark:text-primary-light">Our Services</h2>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
                 <div className="mb-6">
                   <Image src="/globe.svg" alt="Technical Recruitment" width={48} height={48} className="text-primary" />
