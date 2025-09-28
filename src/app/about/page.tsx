@@ -33,7 +33,7 @@ export default function About() {
             </div>
             <div className="relative">
               <Image
-                src="/micah-night-city.jpg"
+                src="/micah-forster-recruitment.jpeg"
                 alt="Micah Forster"
                 width={400}
                 height={400}
