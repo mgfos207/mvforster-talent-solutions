@@ -205,13 +205,13 @@ export default function Home() {
                 </p>
                 <div className="space-y-4">
                   <a
-                    href="mailto:contact@micahforster.com"
+                    href="mailto:micah@mvforster.com"
                     className="flex items-center gap-3 text-lg text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary-light"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    contact@micahforster.com
+                    micah@mvforster.com
                   </a>
                   <a
                     href="http://linkedin.com/in/micah-forster-0207"

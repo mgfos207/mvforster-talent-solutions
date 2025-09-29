@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Micah Forster | Technical Recruitment Specialist",
   description: "Expert technical recruitment and staffing services by Micah Forster, connecting top talent with leading technology companies.",
+  icons: {
+    icon: "favicon-16x16.png",
+  },
 };
 
 export default function RootLayout({
