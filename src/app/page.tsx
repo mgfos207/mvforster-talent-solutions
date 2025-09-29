@@ -214,7 +214,7 @@ export default function Home() {
                     micah@mvforster.com
                   </a>
                   <a
-                    href="http://linkedin.com/in/micah-forster-0207"
+                    href="https://www.linkedin.com/in/micah-forster-91ab8128b/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 text-lg text-gray-700 hover:text-primary dark:text-gray-200 dark:hover:text-primary-light"

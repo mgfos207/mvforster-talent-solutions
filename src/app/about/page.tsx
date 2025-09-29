@@ -20,7 +20,7 @@ export default function About() {
               </p>
               <div className="flex gap-4">
                 <a
-                  href="http://linkedin.com/in/micah-forster-0207"
+                  href="https://www.linkedin.com/in/micah-forster-91ab8128b/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition-colors"
