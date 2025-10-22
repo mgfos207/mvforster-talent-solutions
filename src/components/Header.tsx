@@ -26,9 +26,9 @@ export default function Header() {
             <Link href="/#expertise" className="text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-light transition-colors">
               Expertise
             </Link>
-            <Link href="/#jobs" className="text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-light transition-colors">
+            {/* <Link href="/#jobs" className="text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-light transition-colors">
               Jobs
-            </Link>
+            </Link> */}
             <Link href="/#contact" className="text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-light transition-colors">
               Contact
             </Link>

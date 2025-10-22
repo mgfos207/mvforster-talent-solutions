@@ -25,11 +25,11 @@ export default function Home() {
               Your Success Starts With<br />The Right Talent
             </h1>
             <p className="text-xl md:text-2xl mb-12 leading-relaxed max-w-3xl mx-auto">
-              MVForster Talent Solutions connects exceptional tech talent with innovative companies. 
-              We specialize in placing top-tier professionals in software engineering, data science, 
-              and technical leadership roles.
+              MVForster Talent Solutions connects exceptional talent with innovative companies. 
+              We specialize in placing top-tier professionals in technology, behavioral health, 
+              and therapeutic services.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
+            {/* <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
               <a
                 href="#contact"
                 className="inline-flex items-center justify-center bg-gray-800 text-primary px-8 sm:px-10 py-4 rounded-md border-2 border-white hover:bg-transparent hover:text-white focus:bg-transparent focus:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 focus:scale-105 transition-all duration-200 text-lg font-bold shadow-lg hover:shadow-xl active:scale-95"
@@ -46,7 +46,7 @@ export default function Home() {
               >
                 Find Jobs
               </a>
-            </div>
+            </div> */}
           </div>
           
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-10" />
@@ -61,8 +61,8 @@ export default function Home() {
                 <div className="mb-6">
                   <Image src="/globe.svg" alt="Technical Recruitment" width={48} height={48} className="text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technical Recruitment</h3>
-                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Expert placement services for software engineers, developers, and technical leaders.</p>
+                <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technology & Healthcare Recruitment</h3>
+                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Expert placement services for software engineers, data scientists, BCBA professionals, and behavioral health specialists.</p>
               </div>
               {/* <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
                 <div className="mb-6">
@@ -76,7 +76,7 @@ export default function Home() {
                   <Image src="/file.svg" alt="Career Guidance" width={48} height={48} className="text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Career Guidance</h3>
-                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Professional development and career path optimization for tech professionals.</p>
+                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Professional development and career path optimization for technology and behavioral health professionals.</p>
               </div>
             </div>
           </div>
@@ -86,9 +86,9 @@ export default function Home() {
         <section id="expertise" className="py-24">
           <div className="container mx-auto max-w-6xl px-6">
             <h2 className="text-4xl font-bold text-center mb-16 text-primary dark:text-primary-light">Our Expertise</h2>
-            <div className="grid md:grid-cols-2 gap-12">
+            <div className="grid md:grid-cols-3 gap-12">
               <div className="space-y-8">
-                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">Technical Domains</h3>
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">Technology Domains</h3>
                 <ul className="space-y-4">
                   <li className="flex items-center gap-3 text-lg">
                     <span className="text-primary">•</span>
@@ -113,6 +113,31 @@ export default function Home() {
                 </ul>
               </div>
               <div className="space-y-8">
+                <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">Behavioral Health</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Applied Behavior Analysis (ABA)
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Autism Spectrum Disorder Services
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Early Intervention Programs
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Developmental Disabilities Support
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Clinical Therapy Services
+                  </li>
+                </ul>
+              </div>
+              <div className="space-y-8">
                 <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">Roles We Place</h3>
                 <ul className="space-y-4">
                   <li className="flex items-center gap-3 text-lg">
@@ -133,7 +158,15 @@ export default function Home() {
                   </li>
                   <li className="flex items-center gap-3 text-lg">
                     <span className="text-primary">•</span>
-                    AI Engineers
+                    Board Certified Behavior Analysts (BCBA)
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Registered Behavior Technicians (RBT)
+                  </li>
+                  <li className="flex items-center gap-3 text-lg">
+                    <span className="text-primary">•</span>
+                    Clinical Supervisors & Program Directors
                   </li>                  
                 </ul>
               </div>
