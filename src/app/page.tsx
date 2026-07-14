@@ -62,7 +62,7 @@ export default function Home() {
                   <Image src="/globe.svg" alt="Technical Recruitment" width={48} height={48} className="text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold mb-6 text-secondary dark:text-primary-light">Technology & Healthcare Recruitment</h3>
-                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Expert placement services for software engineers, data scientists, BCBA professionals, and behavioral health specialists.</p>
+                <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed">Expert placement services for software engineers, data scientists, BCBA professionals, behavioral health specialists, and healthcare administration roles.</p>
               </div>
               {/* <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:scale-105">
                 <div className="mb-6">
