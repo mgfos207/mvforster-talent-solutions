@@ -24,7 +24,6 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 
 ### Active
 
-- [ ] Remove the personal `/goals` page and `public/family/` photos from the public deploy, keeping them only in a private or local copy
 - [ ] Fix the broken brand color tokens (Tailwind v4 `@theme inline` syntax running on v3.3.3, so `text-primary` and similar classes currently output nothing)
 - [ ] Clean up duplicate and dead config and page files (next.config.ts/.jsold, tailwind/postcss duplicates, page.tsx.bak/.new, .nextoldyml, stray pnpm files), keeping the no-`basePath` config the custom domain needs
 - [ ] Split monolithic pages into section components (`src/components/sections/*`) so the hero and other sections can be swapped independently
@@ -41,7 +40,8 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 - Custom-filmed video production. Using stock or generated footage for now; Micah can swap in real testimonials later.
 - Job board, job listings, or applicant tracking. Calendly is the only conversion path for now.
 - Backend, CMS, forms with server processing, or auth. GitHub Pages static hosting has no server.
-- Password-protecting `/goals`. Static hosting can't do real auth, so the page is removed from the deploy instead.
+- Changes to `/goals` and `public/family/`. The user chose to keep them as they are (2026-09-29), even though the repo is public.
+- Founder trust section and quantified stats. Deferred to v2, pending real numbers from Micah.
 - Moving hosting off GitHub Pages. The current deploy works; changing it is a separate decision.
 - Heavy 3D scenes or models (full three.js worlds, GLTF characters). They cost too much performance for a brochure site and don't fit the calm tone.
 
@@ -60,7 +60,6 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 - **Performance:** mobile Lighthouse Performance ≥ 90 and LCP ≤ 2.5s on the home page. The WebGL/video JS must not block first paint.
 - **Accessibility:** respect `prefers-reduced-motion`, meet WCAG AA contrast, and never put essential content inside video or canvas.
 - **Assets:** video is self-hosted and compressed (WebM/MP4 with a poster image) or embedded from a CDN. Keep individual clips small, loaded only when visible.
-- **Privacy:** no personal or family content on the public site.
 
 ## Key Decisions
 
@@ -69,7 +68,9 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 | Visual direction: "calm, premium, human" (Stripe gradient + Linear type, healthcare-warm palette) | The user delegated the choice. This fits trust-driven healthcare recruiting better than flashy 3D. | — Pending |
 | Single conversion path: Calendly popup embed | The user wants every visitor to book an intro chat. A popup keeps them on-site. | — Pending |
 | Stock or generated video instead of custom footage | No existing footage. Keeps v1 unblocked. | — Pending |
-| Remove `/goals` and family photos from the deploy (not password-protect) | GitHub Pages can't enforce auth, so removal is the only real privacy. | — Pending |
+| Keep `/goals` and family photos as they are | User decision after being told the repo is public and that removal wouldn't clear git history | — Pending |
+| Upgrade to Node ≥ 20, Next 16, Tailwind v4 before visual work | Next 14 is EOL, and the CSS already uses v4 `@theme` syntax (brand colors broken on v3) | — Pending |
+| `ogl` for the WebGL hero, `motion` for scroll reveal, official Calendly script loaded on click | Smallest bundles that meet the perf budget, and R3F would force React 19 | — Pending |
 | WebGL for an ambient hero only, with graceful fallbacks | Maximum "modern" impact for the least perf and accessibility risk. | — Pending |
 | Map the codebase before planning (brownfield) | Surfaced broken theme tokens, privacy exposure, and config footguns before redesign work. | ✓ Good |
 
