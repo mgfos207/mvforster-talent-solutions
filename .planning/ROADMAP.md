@@ -29,7 +29,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Only one canonical config file of each kind remains — no dead or duplicate config/page files (`next.config.jsold`, `page.tsx.bak`/`.new`, duplicate Tailwind/PostCSS configs, stray pnpm files)
   4. Each home-page section lives in its own component under `src/components/sections/`, with `page.tsx` only composing them
   5. A single shared capability check (WebGL support, `prefers-reduced-motion`, data-saver/low-power) exists and is ready for the hero, video, and motion features to consume
-**Plans**: TBD
+**Plans**: 6 plans in 4 waves
+Plans:
+- [ ] 01-01-PLAN.md — Node 22 CI + Tailwind v4 with semantic navy/teal/coral tokens, no dark mode, Inter fix, dead Tailwind/PostCSS/pnpm/workflow files removed
+- [ ] 01-02-PLAN.md — Next.js 16.3.8 + ESLint 9, dead next configs removed, D-11 prefetch smoke test (checkpoint)
+- [ ] 01-03-PLAN.md — Home split into 5 section components + tokenized Header, stale page/SVG files removed
+- [ ] 01-04-PLAN.md — About split into 4 section components with semantic tokens
+- [ ] 01-05-PLAN.md — CapabilitiesProvider (pure tested rules + live-subscribing hook) mounted in root layout
+- [ ] 01-06-PLAN.md — Phase gate, palette/preview approval (checkpoint), merge to main + live mvforster.com verification
 **UI hint**: yes
 **Research flag**: Next.js 16's static-export nested-route prefetch behavior is single-source and unverified on this project's CI — run a smoke test on `/` and `/about` immediately after the upgrade, before relying on it in later phases; keep Next 15.x as a documented fallback if it reproduces.
 
@@ -81,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/TBD | Not started | - |
+| 1. Foundation | 0/6 | Planned | - |
 | 2. WebGL Hero | 0/TBD | Not started | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
