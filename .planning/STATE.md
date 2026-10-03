@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-10-03T00:02:17.896Z"
-last_activity: 2026-10-03 -- Phase 01 planning complete
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-10-03T01:02:08.314Z"
+last_activity: 2026-10-03
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-29)
 
 **Core value:** Every visitor, whether employer or candidate, can book an intro chat on Calendly in one click from anywhere on the site. The new visuals must make that booking more likely, not get in the way of it.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 01 — foundation
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation)
-Plan: 0 of TBD in current phase
+Phase: 01 (foundation) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-10-03 -- Phase 01 planning complete
+Last activity: 2026-10-03
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01-foundation P01 | 10min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,9 @@ Recent decisions affecting current work:
 - Init: `ogl` for the WebGL hero, `motion` for scroll reveal, official Calendly script loaded on click — smallest bundles that meet the perf budget without forcing React 19
 - Init: Keep `/goals` and `public/family/` untouched — user decision, no privacy/history-rewrite phase in this roadmap
 - Init: Founder trust section and quantified stats deferred to v2 — pending real numbers from Micah
+- [Phase ?]: Node 22 chosen over Node 24 for Phase 1 upgrade — matches local dev runtime (v22.23.2), avoiding CI/local mismatch
+- [Phase ?]: Manual Tailwind v3->v4 rewrite instead of @tailwindcss/upgrade codemod — only 2 v3-only class names existed in source
+- [Phase ?]: Pinned tailwindcss/@tailwindcss/postcss/postcss to exact versions (no caret ranges) per plan threat model T-01-SC
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-02T23:35:22.975Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-foundation/01-CONTEXT.md
+Last session: 2026-10-03T01:02:08.302Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None

@@ -7,10 +7,10 @@
 
 ### Foundation
 
-- [ ] **FOUND-01**: The site builds and deploys from CI on Node ≥ 20, still to the custom domain mvforster.com with no `basePath`
+- [x] **FOUND-01**: The site builds and deploys from CI on Node ≥ 20, still to the custom domain mvforster.com with no `basePath`
 - [ ] **FOUND-02**: The site runs on Next.js 16 with static export, and `/` and `/about` load and navigate correctly on the deployed site
-- [ ] **FOUND-03**: The site runs on Tailwind v4, and brand color tokens (`text-primary`, `bg-primary`, etc.) render visibly on every page
-- [ ] **FOUND-04**: Dead config and page files (`next.config.ts`, `next.config.jsold`, duplicate tailwind/postcss configs, `page.tsx.bak`/`.new`, `.nextoldyml`, stray pnpm files) are removed, so a single config file of each kind is in effect
+- [x] **FOUND-03**: The site runs on Tailwind v4, and brand color tokens (`text-primary`, `bg-primary`, etc.) render visibly on every page
+- [x] **FOUND-04**: Dead config and page files (`next.config.ts`, `next.config.jsold`, duplicate tailwind/postcss configs, `page.tsx.bak`/`.new`, `.nextoldyml`, stray pnpm files) are removed, so a single config file of each kind is in effect
 - [ ] **FOUND-05**: Each home-page section is its own component under `src/components/sections/`, and `page.tsx` only composes them
 
 ### Capabilities
@@ -95,10 +95,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
 | FOUND-02 | Phase 1 | Pending |
-| FOUND-03 | Phase 1 | Pending |
-| FOUND-04 | Phase 1 | Pending |
+| FOUND-03 | Phase 1 | Complete |
+| FOUND-04 | Phase 1 | Complete |
 | FOUND-05 | Phase 1 | Pending |
 | CAP-01 | Phase 1 | Pending |
 | HERO-01 | Phase 2 | Pending |

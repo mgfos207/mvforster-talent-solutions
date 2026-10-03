@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Node 22 CI + Tailwind v4 with semantic navy/teal/coral tokens, no dark mode, Inter fix, dead Tailwind/PostCSS/pnpm/workflow files removed
+- [x] 01-01-PLAN.md — Node 22 CI + Tailwind v4 with semantic navy/teal/coral tokens, no dark mode, Inter fix, dead Tailwind/PostCSS/pnpm/workflow files removed
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -113,7 +113,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/6 | Planned | - |
+| 1. Foundation | 1/6 | In Progress|  |
 | 2. WebGL Hero | 0/TBD | Not started | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
