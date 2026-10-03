@@ -233,7 +233,7 @@ export default function Home() {
               <div className="space-y-6">
                 <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">Ready to Work Together?</h3>
                 <p className="text-lg text-gray-700 dark:text-gray-200">
-                  Whether you're looking to hire top tech talent or seeking your next career opportunity, 
+                  Whether you&apos;re looking to hire top tech talent or seeking your next career opportunity,
                   MVForster Talent Solutions is here to help you succeed.
                 </p>
                 <div className="space-y-4">

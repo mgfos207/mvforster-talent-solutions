@@ -129,7 +129,7 @@ export default function About() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-primary mt-1.5">•</span>
-                  Constructed end-to-end Natural Language Processing pipeline trained on 250 Gigabytes of data for ESPN's Fantasy Football platform
+                  Constructed end-to-end Natural Language Processing pipeline trained on 250 Gigabytes of data for ESPN&apos;s Fantasy Football platform
                 </li>
               </ul>
             </div>
@@ -223,7 +223,7 @@ export default function About() {
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
               <div className="flex flex-col md:flex-row justify-between mb-4">
                 <h3 className="text-2xl font-bold text-secondary dark:text-primary-light">
-                  Bachelor's Degree in Computer Information Science
+                  Bachelor&apos;s Degree in Computer Information Science
                 </h3>
               </div>
               <h4 className="text-xl text-primary mb-4">University of North Florida</h4>
