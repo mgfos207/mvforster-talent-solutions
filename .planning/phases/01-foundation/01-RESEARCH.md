@@ -501,7 +501,9 @@ No section built in this phase reads `useCapabilityVerdicts()` — CAP-01 only r
 
 **No other claims in this research are tagged [ASSUMED]** — version numbers, peer dependencies, engine requirements, and the GitHub issue root-cause analysis were verified live against the npm registry and GitHub during this research session (see Sources).
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Both resolved during planning: Q1 is operationalized as the blocking D-11 smoke-test checkpoint in `01-02-PLAN.md` Task 2; Q2 is decided as a manual rewrite (no codemod) in `01-01-PLAN.md` Task 2.
 
 1. **Will the Next 16 RSC-prefetch bug actually reproduce on this project's Ubuntu CI/WSL2 dev setup?**
    - What we know: Root cause is confirmed Windows-specific (`path.relative()` backslash behavior); this project's CI is `ubuntu-latest` and local dev is WSL2 (Linux filesystem semantics).
