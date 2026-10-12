@@ -1,50 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #1a2942;
-  --primary: #1e6f5c;
-  --primary-light: #29bb89;
-  --primary-dark: #184d40;
-  --secondary: #2d6187;
-  --accent: #29bb89;
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-600: #475569;
-  --gray-700: #334155;
+/* Semantic design tokens (D-04). Contrast-checked against WCAG AA in
+   .planning/phases/01-foundation/01-01-PLAN.md — do not rename without
+   re-running that check. */
+@theme {
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #F4F6F9;
+  --color-ink: #0F1B2D;
+  --color-ink-muted: #4A5568;
+  --color-brand: #0B2545;
+  --color-brand-strong: #071A33;
+  --color-accent: #0F766E;
+  --color-cta: #E76F51;
+  --color-on-brand: #FFFFFF;
+  --color-on-brand-muted: #C9D4E0;
+  --color-on-cta: #0B2545;
+  --color-border: #DCE3EA;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
-  --color-secondary: var(--secondary);
-  --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    --primary: #29bb89;
-    --primary-light: #34d5a1;
-    --primary-dark: #1e6f5c;
-    --secondary: #3d7ba9;
-    --gray-50: #1e293b;
-    --gray-100: #1e293b;
-    --gray-600: #cbd5e1;
-    --gray-700: #e2e8f0;
+@layer base {
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
