@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-10-12T19:59:49.171Z"
+stopped_at: Completed 02-05-PLAN.md
+last_updated: "2026-10-12T20:45:14.782Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 25
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 ## Current Position
 
 Phase: 02 (webgl-hero) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-10-12
 
-Progress: [█████████░] 91%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [█████████░] 91%
 | Phase 01 P06 | 15min | 3 tasks | 1 files |
 | Phase 02-webgl-hero P01 | 15min | 3 tasks | 9 files |
 | Phase 02 P04 | 20min | 2 tasks | 5 files |
+| Phase 02-webgl-hero P05 | 35min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-01]: ogl spike passed on first attempt with no fallback-ladder rung needed — the installed ogl 1.0.11 API matched RESEARCH.md's Renderer/Program/Mesh/Triangle/Transform option names exactly
 - [Phase 02-04]: D-12 resolved to option-a — headline 'Great care starts with the right people', subline naming healthcare/behavioral-health/admin audiences and BCBA/RBT roles
 - [Phase 02-04]: Kept the plan-mandated data-hero-cta-slot attribute name despite colliding with an acceptance grep for 'cta'; verified the real coral/teal-avoidance intent with a scoped bg-cta/text-cta/bg-accent/text-accent grep instead
+- [Phase 02-05]: Replaced --blink-settings=scriptEnabled=false with --disable-javascript for the JS-disabled smoke check — Chrome 148 compatibility; combining --virtual-time-budget with --disable-javascript silently re-enables JS
+- [Phase 02-05]: UAT removed the hero's bottom fade entirely rather than retuning it — Any semi-transparent overlay on the navy shader read as a visible divider band; the fade was a Phase 1 carry-over, not a design requirement
+- [Phase 02-05]: Header-height measurement confirmed scroll-margin-top: calc(73px + 1rem) is already correct at 1440px and 390px — No globals.css change needed
 
 ### Pending Todos
 
@@ -102,6 +106,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-12T19:59:49.163Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-10-12T20:45:14.773Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
