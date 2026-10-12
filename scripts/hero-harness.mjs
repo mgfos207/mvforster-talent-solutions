@@ -8,10 +8,12 @@
 //
 // Usage: npm run hero:render -- [--width 1920] [--height 1080] [--time 0]
 //                                [--out path.png] [--check]
+//                                [--layers all|gradient] [--diff-against path.png]
+//                                [--still desktop|mobile|all]
 
 import { parseArgs } from "node:util";
 import { createServer } from "node:http";
-import { readFile, mkdir } from "node:fs/promises";
+import { readFile, mkdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +21,12 @@ import { createRequire } from "node:module";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { stripTypeScriptTypes } from "node:module";
+import {
+  HERO_STILL_SIZES,
+  HERO_STILL_PATHS,
+  HERO_STILL_MAX_BYTES,
+  HERO_STILL_TIME_SECONDS,
+} from "../src/components/hero/heroConfig.ts";
 
 const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -45,6 +53,7 @@ const { values: args } = parseArgs({
     check: { type: "boolean", default: false },
     layers: { type: "string", default: "all" },
     "diff-against": { type: "string" },
+    still: { type: "string" },
   },
 });
 
@@ -341,7 +350,112 @@ function runChecks(metrics) {
   return failures;
 }
 
+// Encodes pngPath to outWebp as WebP, stepping quality down from 72 to a
+// floor of 40 (D-05 ~30-60KB budget); if still over budget at quality 40,
+// retries the same quality ladder at 85% of the source dimensions (Pitfall 2:
+// no Safari-silent-PNG risk here since this harness always runs in
+// headless Chrome, which supports image/webp natively via ffmpeg's encoder).
+async function encodeStillWebp(pngPath, outWebp, pw, ph) {
+  let quality = 72;
+  let lastBytes = Infinity;
+  for (let tier = 0; tier < 2; tier++) {
+    const scaled = tier === 1;
+    const outWidth = scaled ? Math.round(pw * 0.85) : pw;
+    const outHeight = scaled ? Math.round(ph * 0.85) : ph;
+    const vfArgs = scaled ? ["-vf", `scale=${outWidth}:${outHeight}`] : [];
+
+    while (true) {
+      await execFileAsync(FFMPEG_PATH, [
+        "-y",
+        "-v",
+        "error",
+        "-i",
+        pngPath,
+        ...vfArgs,
+        "-c:v",
+        "libwebp",
+        "-quality",
+        String(quality),
+        "-compression_level",
+        "6",
+        "-preset",
+        "picture",
+        outWebp,
+      ]);
+      const stats = await stat(outWebp);
+      lastBytes = stats.size;
+      if (lastBytes <= HERO_STILL_MAX_BYTES) {
+        return { quality, width: outWidth, height: outHeight, bytes: lastBytes };
+      }
+      if (quality <= 40) break;
+      quality = Math.max(40, quality - 6);
+    }
+    quality = 72; // reset for the next (85%-scale) tier
+  }
+  throw new Error(
+    `Could not fit still under ${HERO_STILL_MAX_BYTES} bytes at any quality/scale tier (last: ${lastBytes} bytes)`,
+  );
+}
+
+async function renderStill(variant) {
+  const size = HERO_STILL_SIZES[variant];
+  const pngPath = path.resolve(
+    REPO_ROOT,
+    `.planning/phases/02-webgl-hero/artifacts/hero-still-${variant}.png`,
+  );
+  const server = await startServer(size.width, size.height, HERO_STILL_TIME_SECONDS, "all");
+  const { port } = server.address();
+  const serverUrl = `http://127.0.0.1:${port}/`;
+
+  try {
+    await renderOnce(serverUrl, size.width, size.height, pngPath);
+    const { buffer, width: pw, height: ph } = await decodeRgb(pngPath);
+    const metrics = analyze(buffer, pw, ph);
+    const failures = runChecks(metrics);
+    if (failures.length > 0) {
+      throw new Error(`Still check failed for ${variant}: ${failures.join("; ")}`);
+    }
+
+    const outWebp = path.resolve(REPO_ROOT, HERO_STILL_PATHS[variant]);
+    await mkdir(path.dirname(outWebp), { recursive: true });
+    const result = await encodeStillWebp(pngPath, outWebp, pw, ph);
+
+    // Pitfall 2: verify the output is really WebP (RIFF....WEBP magic),
+    // not a silently-wrong format.
+    const header = await readFile(outWebp);
+    const isRiff = header.length >= 12 && header.toString("ascii", 0, 4) === "RIFF";
+    const isWebp = header.length >= 12 && header.toString("ascii", 8, 12) === "WEBP";
+    if (!isRiff || !isWebp) {
+      throw new Error(`${outWebp} failed the RIFF/WEBP magic-byte check`);
+    }
+
+    console.log(JSON.stringify({ variant, ...result }));
+  } finally {
+    server.close();
+  }
+}
+
 async function main() {
+  if (args.still) {
+    const variants = args.still === "all" ? ["desktop", "mobile"] : [args.still];
+    for (const v of variants) {
+      if (!HERO_STILL_SIZES[v]) {
+        console.error(`Unknown --still variant: ${v} (expected desktop, mobile, or all)`);
+        process.exitCode = 1;
+        return;
+      }
+    }
+    try {
+      for (const v of variants) {
+        await renderStill(v);
+      }
+    } catch (err) {
+      console.error(err && err.message ? err.message : String(err));
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   const server = await startServer(width, height, time, layers);
   const { port } = server.address();
   const serverUrl = `http://127.0.0.1:${port}/`;
