@@ -13,7 +13,7 @@ This milestone takes the site from a monolithic, EOL-stack static export with br
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check
+- [x] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check (completed 2026-10-12)
 - [ ] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls
 - [ ] **Phase 3: Booking, Ambient Video & How It Works** - Site-wide Calendly CTA, audience-split ambient video, and 3-step "how it works" content
 - [ ] **Phase 4: Visual System, Motion & Quality Validation** - Apply the new visual system and scroll motion sitewide, and verify performance, accessibility, and SEO
@@ -51,7 +51,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-06-PLAN.md — Phase gate, palette/preview approval (checkpoint), merge to main + live mvforster.com verification
+- [x] 01-06-PLAN.md — Phase gate, palette/preview approval (checkpoint), merge to main + live mvforster.com verification
 
 **UI hint**: yes
 **Research flag**: Next.js 16's static-export nested-route prefetch behavior is single-source and unverified on this project's CI — run a smoke test on `/` and `/about` immediately after the upgrade, before relying on it in later phases; keep Next 15.x as a documented fallback if it reproduces.
@@ -113,7 +113,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 5/6 | In Progress|  |
+| 1. Foundation | 6/6 | Complete   | 2026-10-12 |
 | 2. WebGL Hero | 0/TBD | Not started | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
