@@ -70,9 +70,12 @@ export default function Hero() {
         <div data-hero-cta-slot className="mt-12 min-h-14" />
       </div>
 
+      {/* Bottom fade ends in the Services background so there is no visible
+          seam between the hero and the next section; the tall, eased ramp
+          keeps the top of the fade from reading as a line over the navy. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-32 bg-linear-to-t from-surface to-transparent"
+        className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-56 bg-linear-to-t from-surface-muted from-5% via-surface-muted/40 via-40% to-transparent"
       />
     </section>
   );
