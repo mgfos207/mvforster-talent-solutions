@@ -45,9 +45,9 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — Home split into 5 section components + tokenized Header, stale page/SVG files removed
-- [ ] 01-04-PLAN.md — About split into 4 section components with semantic tokens
-- [ ] 01-05-PLAN.md — CapabilitiesProvider (pure tested rules + live-subscribing hook) mounted in root layout
+- [x] 01-03-PLAN.md — Home split into 5 section components + tokenized Header, stale page/SVG files removed
+- [x] 01-04-PLAN.md — About split into 4 section components with semantic tokens
+- [x] 01-05-PLAN.md — CapabilitiesProvider (pure tested rules + live-subscribing hook) mounted in root layout
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -113,7 +113,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/6 | In Progress|  |
+| 1. Foundation | 5/6 | In Progress|  |
 | 2. WebGL Hero | 0/TBD | Not started | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |

@@ -11,11 +11,11 @@
 - [x] **FOUND-02**: The site runs on Next.js 16 with static export, and `/` and `/about` load and navigate correctly on the deployed site
 - [x] **FOUND-03**: The site runs on Tailwind v4, and brand color tokens (`text-primary`, `bg-primary`, etc.) render visibly on every page
 - [x] **FOUND-04**: Dead config and page files (`next.config.ts`, `next.config.jsold`, duplicate tailwind/postcss configs, `page.tsx.bak`/`.new`, `.nextoldyml`, stray pnpm files) are removed, so a single config file of each kind is in effect
-- [ ] **FOUND-05**: Each home-page section is its own component under `src/components/sections/`, and `page.tsx` only composes them
+- [x] **FOUND-05**: Each home-page section is its own component under `src/components/sections/`, and `page.tsx` only composes them
 
 ### Capabilities
 
-- [ ] **CAP-01**: A visitor whose device lacks WebGL, has reduced motion on, or has data-saver on gets the static fallbacks, all decided by one shared capability check that the hero, video, and motion features read
+- [x] **CAP-01**: A visitor whose device lacks WebGL, has reduced motion on, or has data-saver on gets the static fallbacks, all decided by one shared capability check that the hero, video, and motion features read
 
 ### Hero
 
@@ -99,8 +99,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-02 | Phase 1 | Complete |
 | FOUND-03 | Phase 1 | Complete |
 | FOUND-04 | Phase 1 | Complete |
-| FOUND-05 | Phase 1 | Pending |
-| CAP-01 | Phase 1 | Pending |
+| FOUND-05 | Phase 1 | Complete |
+| CAP-01 | Phase 1 | Complete |
 | HERO-01 | Phase 2 | Pending |
 | HERO-02 | Phase 2 | Pending |
 | HERO-03 | Phase 2 | Pending |
