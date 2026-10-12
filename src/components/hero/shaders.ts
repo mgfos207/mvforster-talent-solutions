@@ -167,3 +167,70 @@ void main() {
   gl_FragColor = vec4(color, 1.0);
 }
 `;
+
+// Node-network shaders (D-03/D-04): subtle on-brand points with soft round
+// dots, and faint connecting lines. Alpha per-vertex is computed on the CPU
+// in nodeNetwork.ts (buildNetworkBuffers) — these shaders only interpolate
+// and apply it; no proximity math happens on the GPU (RESEARCH.md Open
+// Question 2, resolved to CPU-side).
+
+export const nodePointVertexShader = /* glsl */ `
+attribute vec2 position;
+attribute float alpha;
+varying float vAlpha;
+
+uniform float uPointSize;
+
+void main() {
+  vAlpha = alpha;
+  gl_PointSize = uPointSize;
+  gl_Position = vec4(position, 0.0, 1.0);
+}
+`;
+
+export const nodePointFragmentShader = /* glsl */ `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+varying float vAlpha;
+
+uniform vec3 uColor;
+
+void main() {
+  vec2 centered = gl_PointCoord - vec2(0.5);
+  float dist = length(centered);
+  if (dist > 0.5) discard;
+  float edge = 1.0 - smoothstep(0.35, 0.5, dist);
+  gl_FragColor = vec4(uColor, vAlpha * edge);
+}
+`;
+
+export const nodeLineVertexShader = /* glsl */ `
+attribute vec2 position;
+attribute float alpha;
+varying float vAlpha;
+
+void main() {
+  vAlpha = alpha;
+  gl_Position = vec4(position, 0.0, 1.0);
+}
+`;
+
+export const nodeLineFragmentShader = /* glsl */ `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+varying float vAlpha;
+
+uniform vec3 uColor;
+
+void main() {
+  gl_FragColor = vec4(uColor, vAlpha);
+}
+`;

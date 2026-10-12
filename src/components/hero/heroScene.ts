@@ -1,13 +1,70 @@
-import { Renderer, Program, Mesh, Triangle, Transform } from "ogl";
-import { HERO_COLORS, HERO_CYCLE_SECONDS, hexToRgb01 } from "./heroConfig";
-import { gradientVertexShader, gradientFragmentShader } from "./shaders";
+import { Renderer, Program, Mesh, Triangle, Transform, Geometry } from "ogl";
+import {
+  HERO_COLORS,
+  HERO_CYCLE_SECONDS,
+  hexToRgb01,
+  HERO_NODE_COUNT_DESKTOP,
+  HERO_NODE_COUNT_TABLET,
+  HERO_NODE_COUNT_MOBILE,
+  HERO_TABLET_BREAKPOINT_PX,
+  HERO_NARROW_BREAKPOINT_PX,
+  HERO_LINK_DISTANCE_PX,
+  HERO_POINTER_RADIUS_PX,
+  HERO_ATTRACTION,
+  HERO_EASE_RATE,
+  HERO_DRIFT_AMPLITUDE,
+  HERO_NODE_ALPHA,
+  HERO_LINE_ALPHA,
+  HERO_LINE_ALPHA_HIGHLIGHT,
+  HERO_POINT_SIZE_PX,
+} from "./heroConfig";
+import {
+  gradientVertexShader,
+  gradientFragmentShader,
+  nodePointVertexShader,
+  nodePointFragmentShader,
+  nodeLineVertexShader,
+  nodeLineFragmentShader,
+} from "./shaders";
+import {
+  createNodes,
+  stepNodes,
+  buildNetworkBuffers,
+  allocateBuffers,
+  nodeCountForWidth,
+  type HeroNode,
+  type NetworkParams,
+} from "./nodeNetwork";
 
 // Public contract consumed unchanged by 02-02 (node network) and 02-03
 // (React lifecycle hook). Do not change these shapes without updating both.
+// `layers` is the one additive, optional field: only the dev harness passes
+// "gradient" to render the gradient mesh alone for the diff-against check;
+// production callers (02-03) never set it (threat T-02-07).
 export type HeroSceneOptions = {
   dpr: number;
   seed: number;
   preserveDrawingBuffer?: boolean;
+  layers?: "all" | "gradient";
+};
+
+const NODE_COUNT_PARAMS = {
+  tabletBreakpointPx: HERO_TABLET_BREAKPOINT_PX,
+  narrowBreakpointPx: HERO_NARROW_BREAKPOINT_PX,
+  desktop: HERO_NODE_COUNT_DESKTOP,
+  tablet: HERO_NODE_COUNT_TABLET,
+  mobile: HERO_NODE_COUNT_MOBILE,
+};
+
+const NETWORK_PARAMS: NetworkParams = {
+  driftAmplitude: HERO_DRIFT_AMPLITUDE,
+  attraction: HERO_ATTRACTION,
+  pointerRadiusPx: HERO_POINTER_RADIUS_PX,
+  easeRate: HERO_EASE_RATE,
+  linkDistancePx: HERO_LINK_DISTANCE_PX,
+  nodeAlpha: HERO_NODE_ALPHA,
+  lineAlpha: HERO_LINE_ALPHA,
+  lineAlphaHighlight: HERO_LINE_ALPHA_HIGHLIGHT,
 };
 
 export type HeroScene = {
@@ -63,11 +120,79 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   mesh.setParent(scene);
 
   // Stored for resize/pointer math; the gradient itself ignores the
-  // pointer (D-04 interaction lives on the node layer added in 02-02).
+  // pointer (D-04 interaction lives on the node layer below).
   let width = 0;
   let height = 0;
   let pointer: { x: number; y: number } | null = null;
   let contextLost = false;
+
+  // Node network layer (D-03/D-04). `layers: "gradient"` (dev harness only,
+  // T-02-07) skips all of this so the harness can render a gradient-only
+  // frame for the --diff-against subtlety check.
+  const layers = options.layers ?? "all";
+  let nodes: HeroNode[] = [];
+  let currentNodeCount = -1;
+  let networkBuffers: ReturnType<typeof allocateBuffers> | null = null;
+  let pointGeometry: Geometry | null = null;
+  let lineGeometry: Geometry | null = null;
+
+  if (layers !== "gradient") {
+    // Allocate once for the worst case (desktop node count); resize() only
+    // ever recreates the `nodes` array, never the GPU buffers.
+    networkBuffers = allocateBuffers(HERO_NODE_COUNT_DESKTOP);
+
+    pointGeometry = new Geometry(gl, {
+      position: { size: 2, data: networkBuffers.points, usage: gl.DYNAMIC_DRAW },
+      alpha: { size: 1, data: networkBuffers.pointAlpha, usage: gl.DYNAMIC_DRAW },
+    });
+    lineGeometry = new Geometry(gl, {
+      position: { size: 2, data: networkBuffers.lines, usage: gl.DYNAMIC_DRAW },
+      alpha: { size: 1, data: networkBuffers.lineAlpha, usage: gl.DYNAMIC_DRAW },
+    });
+
+    const onBrandColor = hexToRgb01(HERO_COLORS.onBrand);
+
+    const pointProgram = new Program(gl, {
+      vertex: nodePointVertexShader,
+      fragment: nodePointFragmentShader,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        uPointSize: { value: HERO_POINT_SIZE_PX * renderer.dpr },
+        uColor: { value: onBrandColor },
+      },
+    });
+    const lineProgram = new Program(gl, {
+      vertex: nodeLineVertexShader,
+      fragment: nodeLineFragmentShader,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        uColor: { value: onBrandColor },
+      },
+    });
+
+    // Draw order (D-03): gradient (renderOrder 0, opaque group) -> lines
+    // (renderOrder 1) -> points (renderOrder 2), both transparent+no-depth
+    // so they land in ogl's "ui" render group, always after the opaque
+    // gradient regardless of renderOrder value.
+    const linesMesh = new Mesh(gl, {
+      geometry: lineGeometry,
+      program: lineProgram,
+      mode: gl.LINES,
+      renderOrder: 1,
+    });
+    const pointsMesh = new Mesh(gl, {
+      geometry: pointGeometry,
+      program: pointProgram,
+      mode: gl.POINTS,
+      renderOrder: 2,
+    });
+    linesMesh.setParent(scene);
+    pointsMesh.setParent(scene);
+  }
 
   function resize(widthCssPx: number, heightCssPx: number): void {
     width = widthCssPx;
@@ -75,15 +200,46 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     renderer.setSize(width, height);
     applyCanvasBoxStyle(canvas);
     program.uniforms.uResolution.value = [width * renderer.dpr, height * renderer.dpr];
+
+    if (layers !== "gradient") {
+      const count = nodeCountForWidth(width, NODE_COUNT_PARAMS);
+      if (count !== currentNodeCount) {
+        nodes = createNodes(count, options.seed, NETWORK_PARAMS);
+        currentNodeCount = count;
+      }
+    }
   }
 
   function setPointer(xCssPx: number | null, yCssPx: number | null): void {
     pointer = xCssPx === null || yCssPx === null ? null : { x: xCssPx, y: yCssPx };
   }
 
-  function render(timeSeconds: number, _deltaSeconds: number): void {
+  function render(timeSeconds: number, deltaSeconds: number): void {
     if (contextLost) return;
     program.uniforms.uTime.value = timeSeconds;
+
+    if (layers !== "gradient" && networkBuffers && pointGeometry && lineGeometry) {
+      const pointerNorm =
+        pointer && width > 0 && height > 0
+          ? { x: pointer.x / width, y: pointer.y / height }
+          : null;
+      const viewport = { width, height };
+      stepNodes(nodes, timeSeconds, deltaSeconds, pointerNorm, viewport, NETWORK_PARAMS);
+      const { pointCount, lineVertexCount } = buildNetworkBuffers(
+        nodes,
+        viewport,
+        pointerNorm,
+        NETWORK_PARAMS,
+        networkBuffers,
+      );
+      pointGeometry.attributes.position.needsUpdate = true;
+      pointGeometry.attributes.alpha.needsUpdate = true;
+      lineGeometry.attributes.position.needsUpdate = true;
+      lineGeometry.attributes.alpha.needsUpdate = true;
+      pointGeometry.setDrawRange(0, pointCount);
+      lineGeometry.setDrawRange(0, lineVertexCount);
+    }
+
     renderer.render({ scene });
   }
 

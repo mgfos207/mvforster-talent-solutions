@@ -43,12 +43,19 @@ const { values: args } = parseArgs({
     time: { type: "string", default: "0" },
     out: { type: "string" },
     check: { type: "boolean", default: false },
+    layers: { type: "string", default: "all" },
+    "diff-against": { type: "string" },
   },
 });
 
 const width = Number(args.width);
 const height = Number(args.height);
 const time = Number(args.time);
+const layers = args.layers;
+if (layers !== "all" && layers !== "gradient") {
+  console.error(`Bad --layers value: ${layers} (expected "all" or "gradient")`);
+  process.exit(1);
+}
 const outPath = args.out
   ? path.resolve(REPO_ROOT, args.out)
   : path.resolve(
@@ -77,13 +84,18 @@ function buildHtml(w, h) {
 </html>`;
 }
 
-function buildEntryJs(w, h, t) {
+function buildEntryJs(w, h, t, layersArg) {
   return `
 import { createHeroScene } from "/hero/heroScene";
 import { HERO_SEED } from "/hero/heroConfig";
 
 try {
-  const scene = createHeroScene({ dpr: 1, seed: HERO_SEED, preserveDrawingBuffer: true });
+  const scene = createHeroScene({
+    dpr: 1,
+    seed: HERO_SEED,
+    preserveDrawingBuffer: true,
+    layers: ${JSON.stringify(layersArg)},
+  });
   document.getElementById("root").appendChild(scene.canvas);
   scene.resize(${w}, ${h});
   scene.render(${t}, 0);
@@ -103,7 +115,7 @@ window.addEventListener("unhandledrejection", (event) => {
 `;
 }
 
-function startServer(w, h, t) {
+function startServer(w, h, t, layersArg) {
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
       try {
@@ -126,7 +138,7 @@ function startServer(w, h, t) {
 
         if (pathname === "/entry.js") {
           res.writeHead(200, { "Content-Type": "text/javascript" });
-          res.end(buildEntryJs(w, h, t));
+          res.end(buildEntryJs(w, h, t, layersArg));
           return;
         }
 
@@ -284,6 +296,29 @@ function analyze(buffer, width, height) {
   return { meanL, stdL, textBoxP99L, warmFraction };
 }
 
+// Pitfall-adjacent note: both PNGs must be decoded via the same path as the
+// single-frame analysis (ffmpeg rawvideo), not byte-compared, since PNG
+// encoding is not guaranteed pixel-stable across runs.
+async function diffPngs(pathA, pathB) {
+  const a = await decodeRgb(pathA);
+  const b = await decodeRgb(pathB);
+  if (a.width !== b.width || a.height !== b.height) {
+    throw new Error(
+      `--diff-against size mismatch: ${a.width}x${a.height} vs ${b.width}x${b.height}`,
+    );
+  }
+  const total = a.width * a.height;
+  let diffPixels = 0;
+  for (let i = 0; i < total; i++) {
+    const idx = i * 3;
+    const dr = Math.abs(a.buffer[idx] - b.buffer[idx]);
+    const dg = Math.abs(a.buffer[idx + 1] - b.buffer[idx + 1]);
+    const db = Math.abs(a.buffer[idx + 2] - b.buffer[idx + 2]);
+    if (dr > 8 || dg > 8 || db > 8) diffPixels++;
+  }
+  return { diffPixels, totalPixels: total, width: a.width, height: a.height };
+}
+
 function runChecks(metrics) {
   const failures = [];
   if (!(metrics.meanL <= 0.08)) {
@@ -307,7 +342,7 @@ function runChecks(metrics) {
 }
 
 async function main() {
-  const server = await startServer(width, height, time);
+  const server = await startServer(width, height, time, layers);
   const { port } = server.address();
   const serverUrl = `http://127.0.0.1:${port}/`;
 
@@ -315,21 +350,42 @@ async function main() {
     await renderOnce(serverUrl, width, height, outPath);
     const { buffer, width: pw, height: ph } = await decodeRgb(outPath);
     const metrics = analyze(buffer, pw, ph);
-    console.log(
-      JSON.stringify({
-        width: pw,
-        height: ph,
-        time,
-        meanL: metrics.meanL,
-        stdL: metrics.stdL,
-        textBoxP99L: metrics.textBoxP99L,
-        warmFraction: metrics.warmFraction,
-        out: outPath,
-      }),
-    );
+
+    const report = {
+      width: pw,
+      height: ph,
+      time,
+      layers,
+      meanL: metrics.meanL,
+      stdL: metrics.stdL,
+      textBoxP99L: metrics.textBoxP99L,
+      warmFraction: metrics.warmFraction,
+      out: outPath,
+    };
+
+    let diffResult = null;
+    if (args["diff-against"]) {
+      const diffAgainstPath = path.resolve(REPO_ROOT, args["diff-against"]);
+      diffResult = await diffPngs(outPath, diffAgainstPath);
+      report.diffPixels = diffResult.diffPixels;
+      report.diffAgainst = diffAgainstPath;
+    }
+
+    console.log(JSON.stringify(report));
 
     if (args.check) {
       const failures = runChecks(metrics);
+      if (diffResult) {
+        const frameArea = diffResult.width * diffResult.height;
+        if (!(diffResult.diffPixels > 200)) {
+          failures.push(`diffPixels ${diffResult.diffPixels} <= 200 (nodes not visible, D-03)`);
+        }
+        if (!(diffResult.diffPixels < 0.05 * frameArea)) {
+          failures.push(
+            `diffPixels ${diffResult.diffPixels} >= 5% of frame (${(0.05 * frameArea).toFixed(0)}) (nodes too prominent, D-03)`,
+          );
+        }
+      }
       if (failures.length > 0) {
         console.error(`FAILED: ${failures.join("; ")}`);
         process.exitCode = 1;
