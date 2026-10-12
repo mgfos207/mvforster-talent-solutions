@@ -21,9 +21,9 @@
 
 - [x] **HERO-01**: A visitor on the home page sees a slow, flowing WebGL mesh-gradient background in the navy/teal/coral palette
 - [ ] **HERO-02**: A visitor sees a subtle connected-nodes network over the gradient that responds gently to cursor or touch movement
-- [ ] **HERO-03**: A visitor whose device can't or shouldn't run WebGL sees a static poster or gradient instead, with no layout shift and no blank area
+- [x] **HERO-03**: A visitor whose device can't or shouldn't run WebGL sees a static poster or gradient instead, with no layout shift and no blank area
 - [ ] **HERO-04**: A visitor can pause and resume hero motion with a visible, keyboard-accessible control (WCAG 2.2.2)
-- [ ] **HERO-05**: A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
+- [x] **HERO-05**: A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
 - [ ] **HERO-06**: The hero stops rendering when it's scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
 ### Video
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAP-01 | Phase 1 | Complete |
 | HERO-01 | Phase 2 | Complete |
 | HERO-02 | Phase 2 | Pending |
-| HERO-03 | Phase 2 | Pending |
+| HERO-03 | Phase 2 | Complete |
 | HERO-04 | Phase 2 | Pending |
-| HERO-05 | Phase 2 | Pending |
+| HERO-05 | Phase 2 | Complete |
 | HERO-06 | Phase 2 | Pending |
 | VID-01 | Phase 3 | Pending |
 | VID-02 | Phase 3 | Pending |

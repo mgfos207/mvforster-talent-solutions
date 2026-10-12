@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-10-12T19:48:37.590Z"
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-10-12T19:59:49.171Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 25
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 ## Current Position
 
 Phase: 02 (webgl-hero) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-10-12
 
-Progress: [██████░░░░] 64%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [██████░░░░] 64%
 | Phase 01-foundation P02 | 12min | 2 tasks | 7 files |
 | Phase 01 P06 | 15min | 3 tasks | 1 files |
 | Phase 02-webgl-hero P01 | 15min | 3 tasks | 9 files |
+| Phase 02 P04 | 20min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 01-06]: Proceed with Phase 1 merge/deploy without the WebGL hero present — User approved after confirming WebGL hero is Phase 2 scope
 - [Phase 01-06]: Do not stash/discard uncommitted config.json change blocking checkout to main — Per resume instructions; coordinator committed the file directly (ae7e5b8) to unblock
 - [Phase 02-01]: ogl spike passed on first attempt with no fallback-ladder rung needed — the installed ogl 1.0.11 API matched RESEARCH.md's Renderer/Program/Mesh/Triangle/Transform option names exactly
+- [Phase 02-04]: D-12 resolved to option-a — headline 'Great care starts with the right people', subline naming healthcare/behavioral-health/admin audiences and BCBA/RBT roles
+- [Phase 02-04]: Kept the plan-mandated data-hero-cta-slot attribute name despite colliding with an acceptance grep for 'cta'; verified the real coral/teal-avoidance intent with a scoped bg-cta/text-cta/bg-accent/text-accent grep instead
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-12T17:25:18.241Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-10-12T19:59:49.163Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
