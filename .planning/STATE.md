@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-10-03T01:02:08.314Z"
-last_activity: 2026-10-03
+last_updated: "2026-10-12T00:46:43.208Z"
+last_activity: 2026-10-05
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 ## Current Position
 
 Phase: 01 (foundation) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
-Last activity: 2026-10-03
+Last activity: 2026-10-05
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [██░░░░░░░░] 17%
 
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 10min | 2 tasks | 11 files |
+| Phase 01-foundation P02 | 12min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Node 22 chosen over Node 24 for Phase 1 upgrade — matches local dev runtime (v22.23.2), avoiding CI/local mismatch
 - [Phase ?]: Manual Tailwind v3->v4 rewrite instead of @tailwindcss/upgrade codemod — only 2 v3-only class names existed in source
 - [Phase ?]: Pinned tailwindcss/@tailwindcss/postcss/postcss to exact versions (no caret ranges) per plan threat model T-01-SC
+- [Phase ?]: Next.js 16.3.8 kept, no fallback needed — D-11 smoke test (two / <-> /about round trips, no __next*/__PAGE__/.txt 404s) passed cleanly in Linux/WSL2
+- [Phase ?]: Skipped npx @next/codemod for the Next 16 upgrade — no dynamic routes/params/middleware/API routes to migrate; avoided an unpinned package fetch
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-03T01:02:08.302Z
+Last session: 2026-10-05T23:54:15.697Z
 Stopped at: Completed 01-01-PLAN.md
 Resume file: None
