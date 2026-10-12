@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-05-PLAN.md
+stopped_at: Phase 02 verification — gaps_found (2)
 last_updated: "2026-10-12T20:45:14.782Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 1
   total_plans: 11
   completed_plans: 11
   percent: 50
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 
 Phase: 02 (webgl-hero) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Verification found 2 gaps — run /gsd:plan-phase 2 --gaps
 Last activity: 2026-10-12
 
 Progress: [██████████] 100%

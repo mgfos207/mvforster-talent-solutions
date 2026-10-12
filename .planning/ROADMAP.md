@@ -14,7 +14,7 @@ This milestone takes the site from a monolithic, EOL-stack static export with br
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check (completed 2026-10-12)
-- [x] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls (completed 2026-10-12)
+- [ ] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls
 - [ ] **Phase 3: Booking, Ambient Video & How It Works** - Site-wide Calendly CTA, audience-split ambient video, and 3-step "how it works" content
 - [ ] **Phase 4: Visual System, Motion & Quality Validation** - Apply the new visual system and scroll motion sitewide, and verify performance, accessibility, and SEO
 
@@ -132,6 +132,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete   | 2026-10-12 |
-| 2. WebGL Hero | 5/5 | Complete   | 2026-10-12 |
+| 2. WebGL Hero | 5/5 | Gaps found | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
