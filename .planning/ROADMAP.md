@@ -69,11 +69,11 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — ogl spike: pinned install, heroConfig, gradient shader, createHeroScene contract, headless-Chrome harness with palette/contrast checks
+- [x] 02-01-PLAN.md — ogl spike: pinned install, heroConfig, gradient shader, createHeroScene contract, headless-Chrome harness with palette/contrast checks
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -132,6 +132,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete   | 2026-10-12 |
-| 2. WebGL Hero | 0/5 | Planned | - |
+| 2. WebGL Hero | 1/5 | In Progress|  |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |

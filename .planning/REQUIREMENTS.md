@@ -19,7 +19,7 @@
 
 ### Hero
 
-- [ ] **HERO-01**: A visitor on the home page sees a slow, flowing WebGL mesh-gradient background in the navy/teal/coral palette
+- [x] **HERO-01**: A visitor on the home page sees a slow, flowing WebGL mesh-gradient background in the navy/teal/coral palette
 - [ ] **HERO-02**: A visitor sees a subtle connected-nodes network over the gradient that responds gently to cursor or touch movement
 - [ ] **HERO-03**: A visitor whose device can't or shouldn't run WebGL sees a static poster or gradient instead, with no layout shift and no blank area
 - [ ] **HERO-04**: A visitor can pause and resume hero motion with a visible, keyboard-accessible control (WCAG 2.2.2)
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-04 | Phase 1 | Complete |
 | FOUND-05 | Phase 1 | Complete |
 | CAP-01 | Phase 1 | Complete |
-| HERO-01 | Phase 2 | Pending |
+| HERO-01 | Phase 2 | Complete |
 | HERO-02 | Phase 2 | Pending |
 | HERO-03 | Phase 2 | Pending |
 | HERO-04 | Phase 2 | Pending |
