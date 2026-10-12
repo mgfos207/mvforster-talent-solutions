@@ -69,7 +69,13 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans**: TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 02-01-PLAN.md — ogl spike: pinned install, heroConfig, gradient shader, createHeroScene contract, headless-Chrome harness with palette/contrast checks
+- [ ] 02-02-PLAN.md — Connected-nodes network (pure tested sim + ogl lines/points) and pre-rendered WebP stills of the real scene
+- [ ] 02-03-PLAN.md — Client island: capability-gated lazy loader, render-loop gating (offscreen/hidden/pause/context-loss), passive pointer/touch, crossfade, accessible pause button
+- [ ] 02-04-PLAN.md — Healthcare copy decision + server-rendered Hero.tsx with still, chooser anchors, CTA slot, smooth-scroll CSS
+- [ ] 02-05-PLAN.md — Built-site smoke test (capable / reduced-motion / no-JS / lazy-bundle) and human UAT
 **UI hint**: yes
 **Research flag**: `ogl`'s mesh-gradient shader implementation and its tree-shaking behavior are community-reported, not independently verified — spike a small reference adaptation (Whatamesh/gradient-stripe pattern) before committing to the full render-loop build.
 
@@ -114,6 +120,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete   | 2026-10-12 |
-| 2. WebGL Hero | 0/TBD | Not started | - |
+| 2. WebGL Hero | 0/5 | Planned | - |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
