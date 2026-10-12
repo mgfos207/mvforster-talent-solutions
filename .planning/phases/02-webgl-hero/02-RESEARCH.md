@@ -422,17 +422,19 @@ html {
 | A4 | The ~30-60KB WebP/AVIF still-image budget (from CONTEXT.md D-05, not this research) is achievable at a resolution large enough to cover a full-bleed desktop hero without visible upscaling blur | Common Pitfalls (Pitfall 2) | Medium — gradients compress very well (low high-frequency detail), but this wasn't independently measured in this session; the plan should budget a "verify actual file size after capture" checkpoint rather than assuming the number holds at full resolution |
 | A5 | No image-compression CLI (`cwebp`, `avifenc`, ImageMagick, `sharp`) is needed as a new devDependency — Squoosh's browser-based encoder is a sufficient zero-install substitute | Common Pitfalls, Environment Availability | Low — Squoosh is a well-known, Google-maintained web tool; worst case, the plan adds `sharp` as a one-time devDependency later if manual capture proves too fiddly |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact fixed-header height for `scroll-margin-top` (D-10)**
    - What we know: `Header.tsx` is `fixed`, uses `py-4` padding around a logo (`h-10`) — visually around 72-80px tall, but not measured precisely.
    - What's unclear: The planner should have the executor measure the rendered height directly (DevTools or a quick `getBoundingClientRect()` check) rather than guessing from Tailwind classes, since `py-4` + `h-10` + border isn't a round number.
    - Recommendation: Add a task step to measure `Header`'s rendered height in the browser and hardcode that value (or a CSS custom property) as `scroll-margin-top`, rather than estimating from utility classes.
+   - **RESOLVED:** 02-04 Task 2 sets `scroll-margin-top: calc(73px + 1rem)` as a starting value. 02-05 Task 1 (`scripts/hero-smoke.mjs`) then measures `document.querySelector('header').getBoundingClientRect().height` on the built site at 1440px and 390px in headless Chrome, asserts it equals the CSS px value, and updates globals.css if it differs.
 
 2. **Whether the gradient needs a second ogl `RenderTarget` pass for the node network's "brighten connecting lines near cursor" effect, or whether per-vertex color attributes suffice**
    - What we know: D-04 wants lines to visually brighten near the cursor; a dynamically rebuilt `LINES` vertex buffer with per-vertex alpha/color computed in JS (CPU-side, before upload) is the simplest approach and avoids a second render target entirely.
    - What's unclear: Whether a shader-side approach (passing `uMouse` into the line's own fragment shader) would look better/cheaper than CPU-side vertex color computation — this is a visual/perf tradeoff best resolved during the spike, not during research.
    - Recommendation: Default to CPU-side per-vertex brightness computation (simpler, no second Program needed for proximity math) and revisit only if the spike shows a visible perf or visual problem.
+   - **RESOLVED:** Brightness is computed on the CPU per vertex. `buildNetworkBuffers` in `src/components/hero/nodeNetwork.ts` (02-02 Task 1) writes per-vertex alpha based on pointer proximity, and 02-02 Task 2 uploads it as a dynamic `alpha` attribute. No second render target, and no shader-side proximity math.
 
 ## Environment Availability
 
