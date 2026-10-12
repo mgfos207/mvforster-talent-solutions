@@ -71,11 +71,23 @@ Plans:
 
 **Plans:** 5 plans
 Plans:
+**Wave 1**
+
 - [ ] 02-01-PLAN.md — ogl spike: pinned install, heroConfig, gradient shader, createHeroScene contract, headless-Chrome harness with palette/contrast checks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 02-02-PLAN.md — Connected-nodes network (pure tested sim + ogl lines/points) and pre-rendered WebP stills of the real scene
 - [ ] 02-03-PLAN.md — Client island: capability-gated lazy loader, render-loop gating (offscreen/hidden/pause/context-loss), passive pointer/touch, crossfade, accessible pause button
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 02-04-PLAN.md — Healthcare copy decision + server-rendered Hero.tsx with still, chooser anchors, CTA slot, smooth-scroll CSS
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 02-05-PLAN.md — Built-site smoke test (capable / reduced-motion / no-JS / lazy-bundle) and human UAT
+
 **UI hint**: yes
 **Research flag**: `ogl`'s mesh-gradient shader implementation and its tree-shaking behavior are community-reported, not independently verified — spike a small reference adaptation (Whatamesh/gradient-stripe pattern) before committing to the full render-loop build.
 
