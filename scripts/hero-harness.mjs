@@ -1,0 +1,346 @@
+#!/usr/bin/env node
+// Headless-Chrome render harness for the ogl hero gradient (ROADMAP spike
+// evidence). Serves the real src/components/hero/*.ts modules (type-stripped
+// on the fly) plus the installed ogl package to a minimal page, renders one
+// frame in headless Chrome, screenshots it, and analyzes the PNG for the
+// D-01/D-02 palette/contrast budget. No new npm dependencies — only Node
+// built-ins, google-chrome, and ffmpeg.
+//
+// Usage: npm run hero:render -- [--width 1920] [--height 1080] [--time 0]
+//                                [--out path.png] [--check]
+
+import { parseArgs } from "node:util";
+import { createServer } from "node:http";
+import { readFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { stripTypeScriptTypes } from "node:module";
+
+const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "..");
+const HERO_DIR = path.join(REPO_ROOT, "src/components/hero");
+// ogl's package.json "exports" map only exposes "." (-> ./src/index.js) and
+// "./src/*" — there is no "./package.json" subpath export, so resolve the
+// src directory via the "." entry point instead.
+const OGL_SRC_DIR = path.dirname(require.resolve("ogl"));
+
+const CHROME_PATH = process.env.CHROME_PATH || "/usr/bin/google-chrome";
+const FFMPEG_PATH = process.env.FFMPEG_PATH || "/usr/bin/ffmpeg";
+
+const MODULE_NAME_RE = /^[A-Za-z0-9_-]+$/;
+
+const { values: args } = parseArgs({
+  options: {
+    width: { type: "string", default: "1920" },
+    height: { type: "string", default: "1080" },
+    time: { type: "string", default: "0" },
+    out: { type: "string" },
+    check: { type: "boolean", default: false },
+  },
+});
+
+const width = Number(args.width);
+const height = Number(args.height);
+const time = Number(args.time);
+const outPath = args.out
+  ? path.resolve(REPO_ROOT, args.out)
+  : path.resolve(
+      REPO_ROOT,
+      `.planning/phases/02-webgl-hero/artifacts/hero-${width}x${height}.png`,
+    );
+
+function buildHtml(w, h) {
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>loading</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; }
+  #root { position: fixed; inset: 0; width: ${w}px; height: ${h}px; overflow: hidden; }
+</style>
+<script type="importmap">
+{ "imports": { "ogl": "/ogl/src/index.js" } }
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/entry.js"></script>
+</body>
+</html>`;
+}
+
+function buildEntryJs(w, h, t) {
+  return `
+import { createHeroScene } from "/hero/heroScene";
+import { HERO_SEED } from "/hero/heroConfig";
+
+try {
+  const scene = createHeroScene({ dpr: 1, seed: HERO_SEED, preserveDrawingBuffer: true });
+  document.getElementById("root").appendChild(scene.canvas);
+  scene.resize(${w}, ${h});
+  scene.render(${t}, 0);
+  document.title = "HERO_READY";
+} catch (err) {
+  document.title = "HERO_ERROR: " + (err && err.message ? err.message : String(err));
+}
+
+window.addEventListener("error", (event) => {
+  const message = event.error && event.error.message ? event.error.message : event.message;
+  document.title = "HERO_ERROR: " + message;
+});
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason;
+  document.title = "HERO_ERROR: " + (reason && reason.message ? reason.message : String(reason));
+});
+`;
+}
+
+function startServer(w, h, t) {
+  return new Promise((resolve) => {
+    const server = createServer(async (req, res) => {
+      try {
+        const url = new URL(req.url, "http://127.0.0.1");
+        const pathname = decodeURIComponent(url.pathname);
+
+        // Threat T-02-03: reject any path traversal attempt before it ever
+        // reaches a filesystem read.
+        if (pathname.includes("..")) {
+          res.writeHead(400, { "Content-Type": "text/plain" });
+          res.end("Bad Request: path traversal rejected");
+          return;
+        }
+
+        if (pathname === "/") {
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(buildHtml(w, h));
+          return;
+        }
+
+        if (pathname === "/entry.js") {
+          res.writeHead(200, { "Content-Type": "text/javascript" });
+          res.end(buildEntryJs(w, h, t));
+          return;
+        }
+
+        const heroMatch = /^\/hero\/([^/]+)$/.exec(pathname);
+        if (heroMatch) {
+          const name = heroMatch[1];
+          if (!MODULE_NAME_RE.test(name)) {
+            res.writeHead(400, { "Content-Type": "text/plain" });
+            res.end("Bad Request: invalid module name");
+            return;
+          }
+          const filePath = path.join(HERO_DIR, `${name}.ts`);
+          const source = await readFile(filePath, "utf8");
+          const stripped = stripTypeScriptTypes(source, { mode: "strip" });
+          res.writeHead(200, { "Content-Type": "text/javascript" });
+          res.end(stripped);
+          return;
+        }
+
+        const oglMatch = /^\/ogl\/src\/(.+)$/.exec(pathname);
+        if (oglMatch) {
+          const rel = oglMatch[1];
+          const filePath = path.join(OGL_SRC_DIR, rel);
+          if (!filePath.startsWith(OGL_SRC_DIR)) {
+            res.writeHead(400, { "Content-Type": "text/plain" });
+            res.end("Bad Request: outside ogl src");
+            return;
+          }
+          const source = await readFile(filePath, "utf8");
+          res.writeHead(200, { "Content-Type": "text/javascript" });
+          res.end(source);
+          return;
+        }
+
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("Not Found");
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end(String(err));
+      }
+    });
+
+    // Dev-only server: 127.0.0.1 only, random port (threat T-02-03).
+    server.listen(0, "127.0.0.1", () => resolve(server));
+  });
+}
+
+async function runChrome(chromeArgs) {
+  return execFileAsync(CHROME_PATH, chromeArgs, {
+    timeout: 60000,
+    maxBuffer: 16 * 1024 * 1024,
+  });
+}
+
+async function renderOnce(serverUrl, w, h, outFile) {
+  const baseFlags = [
+    "--headless=new",
+    "--no-sandbox",
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader",
+    "--hide-scrollbars",
+    `--window-size=${w},${h}`,
+    "--virtual-time-budget=8000",
+  ];
+
+  let dumpResult;
+  try {
+    dumpResult = await runChrome([...baseFlags, "--dump-dom", serverUrl]);
+  } catch (err) {
+    throw new Error(`Chrome --dump-dom invocation failed: ${err.message}`);
+  }
+  const titleMatch = /<title>([^<]*)<\/title>/i.exec(dumpResult.stdout);
+  const title = titleMatch ? titleMatch[1] : "(no <title> found in DOM dump)";
+  if (title !== "HERO_READY") {
+    throw new Error(`Hero scene failed to become ready: ${title}`);
+  }
+
+  await mkdir(path.dirname(outFile), { recursive: true });
+  await runChrome([...baseFlags, `--screenshot=${outFile}`, serverUrl]);
+
+  if (!existsSync(outFile)) {
+    throw new Error(`Chrome did not write a screenshot to ${outFile}`);
+  }
+}
+
+function parsePngDimensions(buffer) {
+  // PNG signature (8 bytes) + IHDR chunk: 4-byte length, "IHDR" (4 bytes),
+  // then width/height as 4-byte big-endian integers.
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+async function decodeRgb(pngPath) {
+  const pngBuffer = await readFile(pngPath);
+  const { width: pw, height: ph } = parsePngDimensions(pngBuffer);
+  const { stdout } = await execFileAsync(
+    FFMPEG_PATH,
+    ["-v", "error", "-i", pngPath, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+    { encoding: "buffer", maxBuffer: 256 * 1024 * 1024 },
+  );
+  return { buffer: stdout, width: pw, height: ph };
+}
+
+function srgbToLinear(c) {
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(r, g, b) {
+  return (
+    0.2126 * srgbToLinear(r / 255) +
+    0.7152 * srgbToLinear(g / 255) +
+    0.0722 * srgbToLinear(b / 255)
+  );
+}
+
+function analyze(buffer, width, height) {
+  const totalPixels = width * height;
+  let sumL = 0;
+  let sumL2 = 0;
+  let warmCount = 0;
+  const textBoxLs = [];
+
+  const xMin = Math.floor(width * 0.15);
+  const xMax = Math.ceil(width * 0.85);
+  const yMin = Math.floor(height * 0.28);
+  const yMax = Math.ceil(height * 0.72);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 3;
+      const r = buffer[idx];
+      const g = buffer[idx + 1];
+      const b = buffer[idx + 2];
+      const L = relativeLuminance(r, g, b);
+      sumL += L;
+      sumL2 += L * L;
+      if (r > g + 40 && r > b + 40) warmCount++;
+      if (x >= xMin && x < xMax && y >= yMin && y < yMax) {
+        textBoxLs.push(L);
+      }
+    }
+  }
+
+  const meanL = sumL / totalPixels;
+  const varianceL = Math.max(sumL2 / totalPixels - meanL * meanL, 0);
+  const stdL = Math.sqrt(varianceL);
+  const warmFraction = warmCount / totalPixels;
+
+  textBoxLs.sort((a, b) => a - b);
+  const p99Index = Math.min(textBoxLs.length - 1, Math.floor(textBoxLs.length * 0.99));
+  const textBoxP99L = textBoxLs.length > 0 ? textBoxLs[p99Index] : 0;
+
+  return { meanL, stdL, textBoxP99L, warmFraction };
+}
+
+function runChecks(metrics) {
+  const failures = [];
+  if (!(metrics.meanL <= 0.08)) {
+    failures.push(`meanL ${metrics.meanL.toFixed(4)} > 0.08 (navy-dominant, D-01)`);
+  }
+  if (!(metrics.textBoxP99L <= 0.183)) {
+    failures.push(
+      `textBoxP99L ${metrics.textBoxP99L.toFixed(4)} > 0.183 (white text contrast, D-01)`,
+    );
+  }
+  if (!(metrics.warmFraction <= 0.05)) {
+    failures.push(`warmFraction ${metrics.warmFraction.toFixed(4)} > 0.05 (coral scarce, D-01)`);
+  }
+  if (!(metrics.meanL >= 0.003)) {
+    failures.push(`meanL ${metrics.meanL.toFixed(4)} < 0.003 (frame looks blank)`);
+  }
+  if (!(metrics.stdL >= 0.003)) {
+    failures.push(`stdL ${metrics.stdL.toFixed(4)} < 0.003 (frame looks uniform)`);
+  }
+  return failures;
+}
+
+async function main() {
+  const server = await startServer(width, height, time);
+  const { port } = server.address();
+  const serverUrl = `http://127.0.0.1:${port}/`;
+
+  try {
+    await renderOnce(serverUrl, width, height, outPath);
+    const { buffer, width: pw, height: ph } = await decodeRgb(outPath);
+    const metrics = analyze(buffer, pw, ph);
+    console.log(
+      JSON.stringify({
+        width: pw,
+        height: ph,
+        time,
+        meanL: metrics.meanL,
+        stdL: metrics.stdL,
+        textBoxP99L: metrics.textBoxP99L,
+        warmFraction: metrics.warmFraction,
+        out: outPath,
+      }),
+    );
+
+    if (args.check) {
+      const failures = runChecks(metrics);
+      if (failures.length > 0) {
+        console.error(`FAILED: ${failures.join("; ")}`);
+        process.exitCode = 1;
+      }
+    }
+  } catch (err) {
+    console.error(err && err.message ? err.message : String(err));
+    process.exitCode = 1;
+  } finally {
+    server.close();
+  }
+}
+
+main();
