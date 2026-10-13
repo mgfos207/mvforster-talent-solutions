@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-06-PLAN.md
-last_updated: "2026-10-13T00:50:04.846Z"
+stopped_at: Completed 02-07-PLAN.md
+last_updated: "2026-10-13T01:07:22.891Z"
 last_activity: 2026-10-13
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 13
-  completed_plans: 12
-  percent: 25
+  completed_plans: 13
+  percent: 50
 ---
 
 # Project State
@@ -26,17 +26,17 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 ## Current Position
 
 Phase: 02 (webgl-hero) — EXECUTING
-Plan: 2 of 7
-Status: Ready to execute
+Plan: 7 of 7
+Status: Phase complete — ready for re-verification
 Last activity: 2026-10-13
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -59,6 +59,7 @@ Progress: [█████████░] 92%
 | Phase 02 P04 | 20min | 2 tasks | 5 files |
 | Phase 02-webgl-hero P05 | 35min | 2 tasks | 2 files |
 | Phase 02-webgl-hero P06 | 22min | 2 tasks | 4 files |
+| Phase 02 P07 | 14min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 02-05]: Header-height measurement confirmed scroll-margin-top: calc(73px + 1rem) is already correct at 1440px and 390px — No globals.css change needed
 - [Phase ?]: [Phase 02-06]: Used ogl's exported OGLRenderingContext type for buildScene()'s gl parameter instead of a hand-written WebGLRenderingContext union, matching ogl's stricter Program/Mesh/Geometry constructor types
 - [Phase ?]: [Phase 02-06]: Performed a manual negative control during Task 2 verification (temporarily commented out the three assertProgramLinked calls, confirmed --break-shader gradient reports HERO_UNEXPECTED_SUCCESS and exits non-zero, then restored) to prove the check is real
+- [Phase 02]: 02-07: Non-reference-aspect still/live offset accepted and documented (tier/link/point size match on every served viewport; pixel-exact at reference sizes) instead of live cover-fit projection
+- [Phase 02]: 02-07: --verify-stills bigDiffFraction tightened to 5e-5 (pass ~1.5e-6, old-mobile control ~5e-4); meanAbsDiff cannot discriminate tier mismatch
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-13T00:50:04.835Z
+Last session: 2026-10-13T01:04:39.351Z
 Stopped at: Completed 02-06-PLAN.md
 Resume file: None

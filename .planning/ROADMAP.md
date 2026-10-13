@@ -14,7 +14,7 @@ This milestone takes the site from a monolithic, EOL-stack static export with br
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check (completed 2026-10-12)
-- [ ] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls
+- [x] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls (completed 2026-10-13)
 - [ ] **Phase 3: Booking, Ambient Video & How It Works** - Site-wide Calendly CTA, audience-split ambient video, and 3-step "how it works" content
 - [ ] **Phase 4: Visual System, Motion & Quality Validation** - Apply the new visual system and scroll motion sitewide, and verify performance, accessibility, and SEO
 
@@ -69,7 +69,7 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 Plans:
 **Wave 1**
 
@@ -94,7 +94,7 @@ Plans:
 
 **Gap closure — Wave 2** *(blocked on 02-06; shares scripts/hero-harness.mjs)*
 
-- [ ] 02-07-PLAN.md — Tier-matched stills (mobile 390x844@2x, new tablet, desktop), config-driven <picture>, tier-parity tests, harness --verify-stills with negative control
+- [x] 02-07-PLAN.md — Tier-matched stills (mobile 390x844@2x, new tablet, desktop), config-driven <picture>, tier-parity tests, harness --verify-stills with negative control
 
 **UI hint**: yes
 **Research flag**: `ogl`'s mesh-gradient shader implementation and its tree-shaking behavior are community-reported, not independently verified — spike a small reference adaptation (Whatamesh/gradient-stripe pattern) before committing to the full render-loop build.
@@ -140,6 +140,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete   | 2026-10-12 |
-| 2. WebGL Hero | 6/7 | In Progress|  |
+| 2. WebGL Hero | 7/7 | Complete   | 2026-10-13 |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |
