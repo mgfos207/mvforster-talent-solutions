@@ -70,13 +70,21 @@ export const HERO_POINT_SIZE_PX = 3;
 // Guarantee: each variant is rendered at a CSS width inside its own served
 // range (minCssWidth..maxCssWidth), so nodeCountForWidth(cssWidth) always
 // equals the node tier the live canvas uses across that still's *entire*
-// served range. Link distance (HERO_LINK_DISTANCE_PX) and point size
+// served range, measured by viewport width. Exception (REVIEW WR-01,
+// accepted): on classic-scrollbar desktops the container is ~15px narrower
+// than the viewport, so in a band just above 768/1024 (and at fractional
+// widths between 767 and 768) the still is one node tier off the canvas.
+// Link distance (HERO_LINK_DISTANCE_PX) and point size
 // (HERO_POINT_SIZE_PX) are both measured in the same CSS-px scale the live
 // canvas uses, so they match too. The still/live match is pixel-exact only
 // at each variant's reference cssWidth/cssHeight. At other aspect ratios
 // within the same tier, the <img>/<source> is object-cover cropped while
 // live node coordinates stay normalized to the full container, so node
-// positions shift by a bounded amount during the 800ms crossfade. This is an
+// positions and gradient composition shift during the 800ms crossfade. The
+// shift is small near the reference aspect but large on landscape viewports
+// served a portrait still (e.g. a 932x430 phone gets the 820x1180 tablet
+// still, cropped to about its middle third; REVIEW WR-02, accepted after
+// on-device UAT). This is an
 // accepted limitation (02-07 objective): a live cover-fit projection would
 // require reworking the gradient shader's aspect math and nodeNetwork's
 // normalized-coordinate model, which the original 02-02 design deliberately
