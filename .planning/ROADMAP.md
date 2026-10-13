@@ -69,7 +69,7 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans:** 5/5 plans complete
+**Plans:** 5/7 plans complete (2 gap-closure plans pending)
 Plans:
 **Wave 1**
 
@@ -87,6 +87,14 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 02-05-PLAN.md — Built-site smoke test (capable / reduced-motion / no-JS / lazy-bundle) and human UAT
+
+**Gap closure — Wave 1** *(from 02-VERIFICATION.md)*
+
+- [ ] 02-06-PLAN.md — Shader link guard: throw on compile/link failure + release GL context, fake-gl unit tests, harness --break-shader check
+
+**Gap closure — Wave 2** *(blocked on 02-06; shares scripts/hero-harness.mjs)*
+
+- [ ] 02-07-PLAN.md — Tier-matched stills (mobile 390x844@2x, new tablet, desktop), config-driven <picture>, tier-parity tests, harness --verify-stills with negative control
 
 **UI hint**: yes
 **Research flag**: `ogl`'s mesh-gradient shader implementation and its tree-shaking behavior are community-reported, not independently verified — spike a small reference adaptation (Whatamesh/gradient-stripe pattern) before committing to the full render-loop build.
