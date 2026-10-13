@@ -69,7 +69,7 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans:** 5/7 plans complete (2 gap-closure plans pending)
+**Plans:** 6/7 plans executed
 Plans:
 **Wave 1**
 
@@ -90,7 +90,7 @@ Plans:
 
 **Gap closure — Wave 1** *(from 02-VERIFICATION.md)*
 
-- [ ] 02-06-PLAN.md — Shader link guard: throw on compile/link failure + release GL context, fake-gl unit tests, harness --break-shader check
+- [x] 02-06-PLAN.md — Shader link guard: throw on compile/link failure + release GL context, fake-gl unit tests, harness --break-shader check
 
 **Gap closure — Wave 2** *(blocked on 02-06; shares scripts/hero-harness.mjs)*
 
@@ -140,6 +140,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete   | 2026-10-12 |
-| 2. WebGL Hero | 5/5 | Gaps found | - |
+| 2. WebGL Hero | 6/7 | In Progress|  |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |

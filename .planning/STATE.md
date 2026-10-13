@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-05-PLAN.md
-last_updated: "2026-10-13T00:25:25.328Z"
-last_activity: 2026-10-13 -- Phase 02 planning complete
+stopped_at: Completed 02-06-PLAN.md
+last_updated: "2026-10-13T00:50:04.846Z"
+last_activity: 2026-10-13
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
   percent: 25
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 ## Current Position
 
 Phase: 02 (webgl-hero) — EXECUTING
-Plan: 5 of 5
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-10-13 -- Phase 02 planning complete
+Last activity: 2026-10-13
 
-Progress: [██████████] 100%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 02-webgl-hero P01 | 15min | 3 tasks | 9 files |
 | Phase 02 P04 | 20min | 2 tasks | 5 files |
 | Phase 02-webgl-hero P05 | 35min | 2 tasks | 2 files |
+| Phase 02-webgl-hero P06 | 22min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 02-05]: Replaced --blink-settings=scriptEnabled=false with --disable-javascript for the JS-disabled smoke check — Chrome 148 compatibility; combining --virtual-time-budget with --disable-javascript silently re-enables JS
 - [Phase 02-05]: UAT removed the hero's bottom fade entirely rather than retuning it — Any semi-transparent overlay on the navy shader read as a visible divider band; the fade was a Phase 1 carry-over, not a design requirement
 - [Phase 02-05]: Header-height measurement confirmed scroll-margin-top: calc(73px + 1rem) is already correct at 1440px and 390px — No globals.css change needed
+- [Phase ?]: [Phase 02-06]: Used ogl's exported OGLRenderingContext type for buildScene()'s gl parameter instead of a hand-written WebGLRenderingContext union, matching ogl's stricter Program/Mesh/Geometry constructor types
+- [Phase ?]: [Phase 02-06]: Performed a manual negative control during Task 2 verification (temporarily commented out the three assertProgramLinked calls, confirmed --break-shader gradient reports HERO_UNEXPECTED_SUCCESS and exits non-zero, then restored) to prove the check is real
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-12T20:45:14.773Z
-Stopped at: Completed 02-05-PLAN.md
+Last session: 2026-10-13T00:50:04.835Z
+Stopped at: Completed 02-06-PLAN.md
 Resume file: None
