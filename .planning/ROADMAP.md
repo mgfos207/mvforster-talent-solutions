@@ -13,8 +13,8 @@ This milestone takes the site from a monolithic, EOL-stack static export with br
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check
-- [ ] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls
+- [x] **Phase 1: Foundation** - Upgrade the stack, fix broken design tokens, remove dead config, split the page into section components, and build the shared capability check (completed 2026-10-12)
+- [x] **Phase 2: WebGL Hero** - Replace the static hero with a mesh-gradient + connected-nodes WebGL background with graceful fallback and controls (completed 2026-10-13)
 - [ ] **Phase 3: Booking, Ambient Video & How It Works** - Site-wide Calendly CTA, audience-split ambient video, and 3-step "how it works" content
 - [ ] **Phase 4: Visual System, Motion & Quality Validation** - Apply the new visual system and scroll motion sitewide, and verify performance, accessibility, and SEO
 
@@ -51,7 +51,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-06-PLAN.md — Phase gate, palette/preview approval (checkpoint), merge to main + live mvforster.com verification
+- [x] 01-06-PLAN.md — Phase gate, palette/preview approval (checkpoint), merge to main + live mvforster.com verification
 
 **UI hint**: yes
 **Research flag**: Next.js 16's static-export nested-route prefetch behavior is single-source and unverified on this project's CI — run a smoke test on `/` and `/about` immediately after the upgrade, before relying on it in later phases; keep Next 15.x as a documented fallback if it reproduces.
@@ -69,7 +69,33 @@ Plans:
   4. A visitor can pick "I'm hiring" or "I'm looking for work" in the hero and jump to the matching audience section
   5. The hero stops rendering when scrolled off-screen or the tab is hidden, and recovers from WebGL context loss by showing the fallback
 
-**Plans**: TBD
+**Plans:** 7/7 plans complete
+Plans:
+**Wave 1**
+
+- [x] 02-01-PLAN.md — ogl spike: pinned install, heroConfig, gradient shader, createHeroScene contract, headless-Chrome harness with palette/contrast checks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 02-02-PLAN.md — Connected-nodes network (pure tested sim + ogl lines/points) and pre-rendered WebP stills of the real scene
+- [x] 02-03-PLAN.md — Client island: capability-gated lazy loader, render-loop gating (offscreen/hidden/pause/context-loss), passive pointer/touch, crossfade, accessible pause button
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 02-04-PLAN.md — Healthcare copy decision + server-rendered Hero.tsx with still, chooser anchors, CTA slot, smooth-scroll CSS
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 02-05-PLAN.md — Built-site smoke test (capable / reduced-motion / no-JS / lazy-bundle) and human UAT
+
+**Gap closure — Wave 1** *(from 02-VERIFICATION.md)*
+
+- [x] 02-06-PLAN.md — Shader link guard: throw on compile/link failure + release GL context, fake-gl unit tests, harness --break-shader check
+
+**Gap closure — Wave 2** *(blocked on 02-06; shares scripts/hero-harness.mjs)*
+
+- [x] 02-07-PLAN.md — Tier-matched stills (mobile 390x844@2x, new tablet, desktop), config-driven <picture>, tier-parity tests, harness --verify-stills with negative control
+
 **UI hint**: yes
 **Research flag**: `ogl`'s mesh-gradient shader implementation and its tree-shaking behavior are community-reported, not independently verified — spike a small reference adaptation (Whatamesh/gradient-stripe pattern) before committing to the full render-loop build.
 
@@ -113,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 5/6 | In Progress|  |
-| 2. WebGL Hero | 0/TBD | Not started | - |
+| 1. Foundation | 6/6 | Complete   | 2026-10-12 |
+| 2. WebGL Hero | 7/7 | Complete   | 2026-10-13 |
 | 3. Booking, Ambient Video & How It Works | 0/TBD | Not started | - |
 | 4. Visual System, Motion & Quality Validation | 0/TBD | Not started | - |

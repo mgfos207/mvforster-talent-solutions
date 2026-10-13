@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function Services() {
   return (
     <section id="services" className="py-20 bg-surface-muted">
-      <div className="container mx-auto max-w-6xl px-6">
+      <div id="employers" className="container mx-auto max-w-6xl px-6">
         <h2 className="text-4xl font-bold text-center mb-16 text-brand">Our Services</h2>
         <div className="grid md:grid-cols-2 gap-8">
           <div className="bg-surface p-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-border hover:scale-105">

@@ -1,7 +1,7 @@
 export default function Expertise() {
   return (
     <section id="expertise" className="py-24">
-      <div className="container mx-auto max-w-6xl px-6">
+      <div id="candidates" className="container mx-auto max-w-6xl px-6">
         <h2 className="text-4xl font-bold text-center mb-16 text-brand">Our Expertise</h2>
         <div className="grid md:grid-cols-3 gap-12">
           <div className="space-y-8">

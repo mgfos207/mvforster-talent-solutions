@@ -16,17 +16,18 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 
 <!-- Existing capabilities inferred from the codebase (.planning/codebase/) -->
 
-- ✓ Static-exported Next.js 14 App Router site deployed to GitHub Pages at the custom domain mvforster.com (`output: 'export'`, `CNAME`, `.github/workflows/nextjs.yml`). Existing.
+- ✓ Static-exported Next.js App Router site (Next 16.3.8 since Phase 1) deployed to GitHub Pages at the custom domain mvforster.com (`output: 'export'`, `CNAME`, `.github/workflows/nextjs.yml`). Existing.
 - ✓ Home page with hero, services, expertise (behavioral health including BCBA/RBT, healthcare admin roles), "why choose us", and contact sections (`src/app/page.tsx`). Existing.
 - ✓ About page with Micah's bio, experience timeline, skills, education, and LinkedIn/GitHub links (`src/app/about/page.tsx`). Existing.
 - ✓ Shared fixed header nav (`src/components/Header.tsx`). Existing.
 - ✓ Contact via `mailto:` and LinkedIn links. Existing.
+- ✓ Brand color tokens work again: Tailwind v4.3.3 with a CSS-first `@theme` of semantic navy/teal/coral tokens, and dark mode removed. Validated in Phase 1: Foundation.
+- ✓ Duplicate and dead config and page files removed. Exactly one `next.config.js` (no `basePath`), `postcss.config.mjs`, and `package-lock.json` remain. Validated in Phase 1: Foundation.
+- ✓ Home and About split into server-component sections under `src/components/sections/`, with the page files only composing them. Validated in Phase 1: Foundation.
+- ✓ One shared capability check (`CapabilitiesProvider` + `deriveVerdicts`, 14 unit tests) is mounted in the root layout, ready for the WebGL, video, and motion fallbacks. Validated in Phase 1: Foundation.
 
 ### Active
 
-- [ ] Fix the broken brand color tokens (Tailwind v4 `@theme inline` syntax running on v3.3.3, so `text-primary` and similar classes currently output nothing)
-- [ ] Clean up duplicate and dead config and page files (next.config.ts/.jsold, tailwind/postcss duplicates, page.tsx.bak/.new, .nextoldyml, stray pnpm files), keeping the no-`basePath` config the custom domain needs
-- [ ] Split monolithic pages into section components (`src/components/sections/*`) so the hero and other sections can be swapped independently
 - [ ] Apply a new visual system: deep navy, teal, and warm coral palette; large display typography; frosted-glass cards; scroll-reveal motion
 - [ ] Replace the static hero with a WebGL hero: a flowing mesh-gradient shader with a subtle connected-nodes "network" that responds to the cursor
 - [ ] Add ambient, muted, looping stock or generated video to separate "For Employers" and "For Candidates" sections
@@ -50,12 +51,12 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 - **Business:** a solo recruiting practice focused on healthcare, behavioral health (ABA: BCBA/RBT), and healthcare administration. Most visitors will probably come from LinkedIn or referrals, often on mobile.
 - **Visual direction** (Claude chose this and the user approved it): Stripe's animated mesh-gradient homepage plus Linear's crisp typography, warmed up for healthcare. It should feel calm, trustworthy, and human, not techy or flashy.
 - **Codebase state** (see `.planning/codebase/`): the whole page is in one file, there are no client components, the only dependencies are next, react, and react-dom, there are no tests, and the 440KB unoptimized hero JPG is the current LCP element.
-- **Deploy:** pushing to `main` builds with `npm ci && npm run build` on Node 18 and publishes `./out` to GitHub Pages. This work happens on `feature/modern-webgl-video`.
+- **Deploy:** pushing to `main` builds with `npm ci && npm run build` on Node 22 (via `.nvmrc`) and publishes `./out` to GitHub Pages. This work happens on `feature/modern-webgl-video`.
 
 ## Constraints
 
 - **Hosting:** static export on GitHub Pages only. Everything, including WebGL, video, and Calendly, runs client-side.
-- **Tech stack:** Next.js 14 App Router + TypeScript + Tailwind, with npm as the canonical package manager (CI uses `npm ci`).
+- **Tech stack:** Next.js 16 App Router (upgraded from 14 in Phase 1) + TypeScript + Tailwind, with npm as the canonical package manager (CI uses `npm ci`).
 - **Config:** keep the effective `next.config.js` with no `basePath`. The custom domain breaks if a basePath is added.
 - **Performance:** mobile Lighthouse Performance ≥ 90 and LCP ≤ 2.5s on the home page. The WebGL/video JS must not block first paint.
 - **Accessibility:** respect `prefers-reduced-motion`, meet WCAG AA contrast, and never put essential content inside video or canvas.
@@ -69,7 +70,7 @@ If the WebGL or video fails, the page still loads fast, looks polished, and the 
 | Single conversion path: Calendly popup embed | The user wants every visitor to book an intro chat. A popup keeps them on-site. | — Pending |
 | Stock or generated video instead of custom footage | No existing footage. Keeps v1 unblocked. | — Pending |
 | Keep `/goals` and family photos as they are | User decision after being told the repo is public and that removal wouldn't clear git history | — Pending |
-| Upgrade to Node ≥ 20, Next 16, Tailwind v4 before visual work | Next 14 is EOL, and the CSS already uses v4 `@theme` syntax (brand colors broken on v3) | — Pending |
+| Upgrade to Node ≥ 20, Next 16, Tailwind v4 before visual work | Next 14 is EOL, and the CSS already uses v4 `@theme` syntax (brand colors broken on v3) | ✓ Good. Node 22 / Next 16.3.8 / Tailwind 4.3.3 shipped in Phase 1, and the prefetch smoke test passed |
 | `ogl` for the WebGL hero, `motion` for scroll reveal, official Calendly script loaded on click | Smallest bundles that meet the perf budget, and R3F would force React 19 | — Pending |
 | WebGL for an ambient hero only, with graceful fallbacks | Maximum "modern" impact for the least perf and accessibility risk. | — Pending |
 | Map the codebase before planning (brownfield) | Surfaced broken theme tokens, privacy exposure, and config footguns before redesign work. | ✓ Good |
@@ -92,4 +93,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-29 after initialization*
+*Last updated: 2026-10-12 after Phase 1 (Foundation): live on mvforster.com*

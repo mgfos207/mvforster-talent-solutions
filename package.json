@@ -10,10 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types --test scripts/capabilities.test.mjs"
+    "test": "node --experimental-strip-types --test \"scripts/*.test.mjs\"",
+    "hero:render": "node --experimental-strip-types scripts/hero-harness.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
+    "ogl": "1.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

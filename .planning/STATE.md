@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-05-PLAN.md (wave 3 merged)
-last_updated: "2026-10-12T01:26:21.060Z"
-last_activity: 2026-10-12
+stopped_at: Completed 02-07-PLAN.md
+last_updated: "2026-10-13T01:07:22.891Z"
+last_activity: 2026-10-13
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_phases: 2
+  total_plans: 13
+  completed_plans: 13
+  percent: 50
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-29)
 
 **Core value:** Every visitor, whether employer or candidate, can book an intro chat on Calendly in one click from anywhere on the site. The new visuals must make that booking more likely, not get in the way of it.
-**Current focus:** Phase 01 — foundation
+**Current focus:** Phase 02 — webgl-hero
 
 ## Current Position
 
-Phase: 01 (foundation) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-10-12
+Phase: 02 (webgl-hero) — EXECUTING
+Plan: 7 of 7
+Status: Phase complete — ready for re-verification
+Last activity: 2026-10-13
 
-Progress: [████████░░] 83%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 7
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -44,7 +44,7 @@ Progress: [████████░░] 83%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 6 | - | - |
 
 **Recent Trend:**
 
@@ -54,6 +54,12 @@ Progress: [████████░░] 83%
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 10min | 2 tasks | 11 files |
 | Phase 01-foundation P02 | 12min | 2 tasks | 7 files |
+| Phase 01 P06 | 15min | 3 tasks | 1 files |
+| Phase 02-webgl-hero P01 | 15min | 3 tasks | 9 files |
+| Phase 02 P04 | 20min | 2 tasks | 5 files |
+| Phase 02-webgl-hero P05 | 35min | 2 tasks | 2 files |
+| Phase 02-webgl-hero P06 | 22min | 2 tasks | 4 files |
+| Phase 02 P07 | 14min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -71,6 +77,18 @@ Recent decisions affecting current work:
 - [Phase ?]: Pinned tailwindcss/@tailwindcss/postcss/postcss to exact versions (no caret ranges) per plan threat model T-01-SC
 - [Phase ?]: Next.js 16.3.8 kept, no fallback needed — D-11 smoke test (two / <-> /about round trips, no __next*/__PAGE__/.txt 404s) passed cleanly in Linux/WSL2
 - [Phase ?]: Skipped npx @next/codemod for the Next 16 upgrade — no dynamic routes/params/middleware/API routes to migrate; avoided an unpinned package fetch
+- [Phase 01-06]: Proceed with Phase 1 merge/deploy without the WebGL hero present — User approved after confirming WebGL hero is Phase 2 scope
+- [Phase 01-06]: Do not stash/discard uncommitted config.json change blocking checkout to main — Per resume instructions; coordinator committed the file directly (ae7e5b8) to unblock
+- [Phase 02-01]: ogl spike passed on first attempt with no fallback-ladder rung needed — the installed ogl 1.0.11 API matched RESEARCH.md's Renderer/Program/Mesh/Triangle/Transform option names exactly
+- [Phase 02-04]: D-12 resolved to option-a — headline 'Great care starts with the right people', subline naming healthcare/behavioral-health/admin audiences and BCBA/RBT roles
+- [Phase 02-04]: Kept the plan-mandated data-hero-cta-slot attribute name despite colliding with an acceptance grep for 'cta'; verified the real coral/teal-avoidance intent with a scoped bg-cta/text-cta/bg-accent/text-accent grep instead
+- [Phase 02-05]: Replaced --blink-settings=scriptEnabled=false with --disable-javascript for the JS-disabled smoke check — Chrome 148 compatibility; combining --virtual-time-budget with --disable-javascript silently re-enables JS
+- [Phase 02-05]: UAT removed the hero's bottom fade entirely rather than retuning it — Any semi-transparent overlay on the navy shader read as a visible divider band; the fade was a Phase 1 carry-over, not a design requirement
+- [Phase 02-05]: Header-height measurement confirmed scroll-margin-top: calc(73px + 1rem) is already correct at 1440px and 390px — No globals.css change needed
+- [Phase ?]: [Phase 02-06]: Used ogl's exported OGLRenderingContext type for buildScene()'s gl parameter instead of a hand-written WebGLRenderingContext union, matching ogl's stricter Program/Mesh/Geometry constructor types
+- [Phase ?]: [Phase 02-06]: Performed a manual negative control during Task 2 verification (temporarily commented out the three assertProgramLinked calls, confirmed --break-shader gradient reports HERO_UNEXPECTED_SUCCESS and exits non-zero, then restored) to prove the check is real
+- [Phase 02]: 02-07: Non-reference-aspect still/live offset accepted and documented (tier/link/point size match on every served viewport; pixel-exact at reference sizes) instead of live cover-fit projection
+- [Phase 02]: 02-07: --verify-stills bigDiffFraction tightened to 5e-5 (pass ~1.5e-6, old-mobile control ~5e-4); meanAbsDiff cannot discriminate tier mismatch
 
 ### Pending Todos
 
@@ -94,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-05T23:54:15.697Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-10-13T01:04:39.351Z
+Stopped at: Completed 02-06-PLAN.md
 Resume file: None

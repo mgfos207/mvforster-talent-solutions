@@ -27,4 +27,21 @@
     background-color: var(--color-surface);
     color: var(--color-ink);
   }
+
+  /* D-10 / 02-04-PLAN: smooth-scroll only when the user has not requested
+     reduced motion; the default (auto) stays instant otherwise. */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* 73px is the fixed Header height (py-4 + h-10 logo + 1px border) plus the
+     UI-SPEC 16px buffer. Starting value derived from the classes; 02-05
+     Task 1 measures the real rendered header height and corrects this if it
+     differs (RESEARCH Open Question 1). */
+  #employers,
+  #candidates {
+    scroll-margin-top: calc(73px + 1rem);
+  }
 }
