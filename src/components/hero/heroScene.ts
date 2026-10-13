@@ -1,4 +1,4 @@
-import { Renderer, Program, Mesh, Triangle, Transform, Geometry } from "ogl";
+import { Renderer, Program, Mesh, Triangle, Transform, Geometry, type OGLRenderingContext } from "ogl";
 import {
   HERO_COLORS,
   HERO_CYCLE_SECONDS,
@@ -35,6 +35,7 @@ import {
   type HeroNode,
   type NetworkParams,
 } from "./nodeNetwork";
+import { assertProgramLinked, releaseContext } from "./glGuards";
 
 // Public contract consumed unchanged by 02-02 (node network) and 02-03
 // (React lifecycle hook). Do not change these shapes without updating both.
@@ -88,18 +89,23 @@ function applyCanvasBoxStyle(canvas: HTMLCanvasElement): void {
   canvas.style.display = "block";
 }
 
-export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const renderer = new Renderer({
-    dpr: options.dpr,
-    alpha: false,
-    antialias: false,
-    powerPreference: "low-power",
-    preserveDrawingBuffer: options.preserveDrawingBuffer ?? false,
-  });
-  const gl = renderer.gl;
-  const canvas = gl.canvas as HTMLCanvasElement;
-  applyCanvasBoxStyle(canvas);
+type BuiltScene = {
+  scene: Transform;
+  program: Program;
+  networkBuffers: ReturnType<typeof allocateBuffers> | null;
+  pointGeometry: Geometry | null;
+  lineGeometry: Geometry | null;
+};
 
+// Constructs every GPU resource (shader programs, geometry, meshes) against
+// the live `gl` context. Called from inside the try/catch in
+// createHeroScene() below so a link failure in any of the three programs
+// (REVIEW WR-01) can be released and rethrown cleanly (REVIEW WR-02).
+function buildScene(
+  gl: OGLRenderingContext,
+  renderer: Renderer,
+  layers: "all" | "gradient",
+): BuiltScene {
   const geometry = new Triangle(gl);
   const program = new Program(gl, {
     vertex: gradientVertexShader,
@@ -115,23 +121,14 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
       uCta: { value: hexToRgb01(HERO_COLORS.cta) },
     },
   });
+  assertProgramLinked(gl, program, "gradient");
   const mesh = new Mesh(gl, { geometry, program });
   const scene = new Transform();
   mesh.setParent(scene);
 
-  // Stored for resize/pointer math; the gradient itself ignores the
-  // pointer (D-04 interaction lives on the node layer below).
-  let width = 0;
-  let height = 0;
-  let pointer: { x: number; y: number } | null = null;
-  let contextLost = false;
-
   // Node network layer (D-03/D-04). `layers: "gradient"` (dev harness only,
   // T-02-07) skips all of this so the harness can render a gradient-only
   // frame for the --diff-against subtlety check.
-  const layers = options.layers ?? "all";
-  let nodes: HeroNode[] = [];
-  let currentNodeCount = -1;
   let networkBuffers: ReturnType<typeof allocateBuffers> | null = null;
   let pointGeometry: Geometry | null = null;
   let lineGeometry: Geometry | null = null;
@@ -163,6 +160,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
         uColor: { value: onBrandColor },
       },
     });
+    assertProgramLinked(gl, pointProgram, "points");
     const lineProgram = new Program(gl, {
       vertex: nodeLineVertexShader,
       fragment: nodeLineFragmentShader,
@@ -173,6 +171,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
         uColor: { value: onBrandColor },
       },
     });
+    assertProgramLinked(gl, lineProgram, "lines");
 
     // Draw order (D-03): gradient (renderOrder 0, opaque group) -> lines
     // (renderOrder 1) -> points (renderOrder 2), both transparent+no-depth
@@ -193,6 +192,48 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     linesMesh.setParent(scene);
     pointsMesh.setParent(scene);
   }
+
+  return { scene, program, networkBuffers, pointGeometry, lineGeometry };
+}
+
+export function createHeroScene(options: HeroSceneOptions): HeroScene {
+  const renderer = new Renderer({
+    dpr: options.dpr,
+    alpha: false,
+    antialias: false,
+    powerPreference: "low-power",
+    preserveDrawingBuffer: options.preserveDrawingBuffer ?? false,
+  });
+  const gl = renderer.gl;
+  const canvas = gl.canvas as HTMLCanvasElement;
+  applyCanvasBoxStyle(canvas);
+
+  const layers = options.layers ?? "all";
+
+  // Everything that builds GPU resources against `gl` runs inside this
+  // try/catch. If any of the three shader programs fails to compile or
+  // link, assertProgramLinked() inside buildScene() throws (REVIEW WR-01);
+  // releaseContext(gl) then frees the context before the same error is
+  // rethrown unchanged (REVIEW WR-02), so useHeroRenderer's existing
+  // try/catch around createHeroScene() runs and the still stays visible.
+  let built: BuiltScene;
+  try {
+    built = buildScene(gl, renderer, layers);
+  } catch (err) {
+    releaseContext(gl);
+    throw err;
+  }
+  const { scene, program, networkBuffers, pointGeometry, lineGeometry } = built;
+
+  // Stored for resize/pointer math; the gradient itself ignores the
+  // pointer (D-04 interaction lives on the node layer below).
+  let width = 0;
+  let height = 0;
+  let pointer: { x: number; y: number } | null = null;
+  let contextLost = false;
+
+  let nodes: HeroNode[] = [];
+  let currentNodeCount = -1;
 
   function resize(widthCssPx: number, heightCssPx: number): void {
     width = widthCssPx;
