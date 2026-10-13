@@ -65,14 +65,75 @@ export const HERO_LINE_ALPHA = 0.1;
 export const HERO_LINE_ALPHA_HIGHLIGHT = 0.38;
 export const HERO_POINT_SIZE_PX = 3;
 
-// Pre-rendered still output (D-05), consumed by 02-02.
+// Pre-rendered still output (D-05/D-06, 02-07 gap closure WR-04).
+//
+// Guarantee: each variant is rendered at a CSS width inside its own served
+// range (minCssWidth..maxCssWidth), so nodeCountForWidth(cssWidth) always
+// equals the node tier the live canvas uses across that still's *entire*
+// served range. Link distance (HERO_LINK_DISTANCE_PX) and point size
+// (HERO_POINT_SIZE_PX) are both measured in the same CSS-px scale the live
+// canvas uses, so they match too. The still/live match is pixel-exact only
+// at each variant's reference cssWidth/cssHeight. At other aspect ratios
+// within the same tier, the <img>/<source> is object-cover cropped while
+// live node coordinates stay normalized to the full container, so node
+// positions shift by a bounded amount during the 800ms crossfade. This is an
+// accepted limitation (02-07 objective): a live cover-fit projection would
+// require reworking the gradient shader's aspect math and nodeNetwork's
+// normalized-coordinate model, which the original 02-02 design deliberately
+// avoided to keep live pointer interaction simple.
+//
+// Served ranges tile [0, infinity) with no gap or overlap and mirror
+// HERO_NARROW_BREAKPOINT_PX / HERO_TABLET_BREAKPOINT_PX exactly (enforced by
+// scripts/hero-stills.test.mjs, not just by this comment).
 export const HERO_STILL_SIZES = {
-  desktop: { width: 1920, height: 1080 },
-  mobile: { width: 780, height: 1688 },
+  mobile: {
+    // Served 0-767 (HERO_NARROW_BREAKPOINT_PX - 1), mobile node tier (22).
+    cssWidth: 390,
+    cssHeight: 844,
+    dpr: 2,
+    minCssWidth: 0,
+    maxCssWidth: 767,
+    width: 780,
+    height: 1688,
+  },
+  tablet: {
+    // Served 768 (HERO_NARROW_BREAKPOINT_PX) - 1023
+    // (HERO_TABLET_BREAKPOINT_PX - 1), tablet node tier (36).
+    cssWidth: 820,
+    cssHeight: 1180,
+    dpr: 2,
+    minCssWidth: 768,
+    maxCssWidth: 1023,
+    width: 1640,
+    height: 2360,
+  },
+  desktop: {
+    // Served 1024 (HERO_TABLET_BREAKPOINT_PX) and up, desktop node tier (48).
+    cssWidth: 1920,
+    cssHeight: 1080,
+    dpr: 1,
+    minCssWidth: 1024,
+    maxCssWidth: null,
+    width: 1920,
+    height: 1080,
+  },
+} as const;
+export const HERO_STILL_SRC = {
+  mobile: "/hero/hero-still-mobile.webp",
+  tablet: "/hero/hero-still-tablet.webp",
+  desktop: "/hero/hero-still-desktop.webp",
 } as const;
 export const HERO_STILL_PATHS = {
   desktop: "public/hero/hero-still-desktop.webp",
   mobile: "public/hero/hero-still-mobile.webp",
+  tablet: "public/hero/hero-still-tablet.webp",
+} as const;
+// Media query strings for the <picture> element, built from the same
+// min/max values as HERO_STILL_SIZES so the served ranges cannot drift from
+// the tested ranges. Desktop is the <img> fallback and has no media entry.
+export const HERO_STILL_MEDIA = {
+  mobile: `(max-width: ${HERO_STILL_SIZES.mobile.maxCssWidth}px)`,
+  tablet: `(min-width: ${HERO_STILL_SIZES.tablet.minCssWidth}px) and (max-width: ${HERO_STILL_SIZES.tablet.maxCssWidth}px)`,
 } as const;
 // ~30-60KB ceiling (D-05).
 export const HERO_STILL_MAX_BYTES = 61440;
