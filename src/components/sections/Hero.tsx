@@ -1,4 +1,9 @@
 import HeroCanvasLoader from "@/components/hero/HeroCanvasLoader";
+import {
+  HERO_STILL_MEDIA,
+  HERO_STILL_SIZES,
+  HERO_STILL_SRC,
+} from "@/components/hero/heroConfig";
 
 // Shared by both chooser links so "I'm hiring" and "I'm looking for work"
 // are visually identical (equal weight, D-09): translucent glass pill, no
@@ -11,12 +16,22 @@ export default function Hero() {
     <section className="relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-brand-strong">
       {/* Pre-rendered still (D-05): server-rendered, LCP-safe first paint and
           permanent fallback for canAnimateHero === false. No overlay scrim
-          needed — the shader itself is authored to keep text-box contrast. */}
+          needed — the shader itself is authored to keep text-box contrast.
+          Three tier-matched stills (mobile, tablet, desktop): each is
+          rendered inside its served width range, so the first live frame
+          matches on every served viewport. Media queries, srcs, and dims
+          all come from heroConfig so they cannot drift from the tested
+          ranges (02-07, REVIEW WR-04). */}
       <div aria-hidden="true" className="absolute inset-0 z-0">
         <picture>
           <source
-            media="(max-width: 767px)"
-            srcSet="/hero/hero-still-mobile.webp"
+            media={HERO_STILL_MEDIA.mobile}
+            srcSet={HERO_STILL_SRC.mobile}
+            type="image/webp"
+          />
+          <source
+            media={HERO_STILL_MEDIA.tablet}
+            srcSet={HERO_STILL_SRC.tablet}
             type="image/webp"
           />
           {/* Plain <img>, not the Next.js Image component: art-directed
@@ -24,10 +39,10 @@ export default function Hero() {
               The no-img-element lint rule already exempts <img> inside
               <picture>. */}
           <img
-            src="/hero/hero-still-desktop.webp"
+            src={HERO_STILL_SRC.desktop}
             alt=""
-            width={1920}
-            height={1080}
+            width={HERO_STILL_SIZES.desktop.width}
+            height={HERO_STILL_SIZES.desktop.height}
             fetchPriority="high"
             className="h-full w-full object-cover"
           />
