@@ -1,9 +1,18 @@
 ---
 phase: 02-webgl-hero
 verified: 2026-10-12T00:00:00Z
-status: human_needed
-score: 43/45 must-haves verified (2 uncertain, developer decision requested)
-overrides_applied: 0
+status: passed
+score: 45/45 must-haves verified (2 via developer-accepted overrides, UAT 2026-10-12)
+overrides_applied: 2
+overrides:
+  - must_have: "Every pre-rendered still is rendered at a CSS width whose node tier matches the tier the live canvas uses across that still's whole served media range"
+    reason: "Holds at every integer width on overlay-scrollbar platforms (all phones/tablets). On classic-scrollbar desktops a ~15px band above 768/1024 (and fractional 767-768) serves a still one tier off; the effect is a faint node rearrangement under an 800ms dissolve (~0.05% of pixels). Accepted as residual polish; REVIEW WR-01 fix can be scheduled later."
+    accepted_by: "mgfos207"
+    accepted_at: "2026-10-12T12:00:00Z"
+  - must_have: "Non-reference aspect ratios within a tier are a documented, accepted limitation"
+    reason: "Portrait tablet/mobile stills on landscape viewports shift gradient composition and node positions during the 800ms crossfade by more than 'slightly'. Judged acceptable on device; heroConfig.ts comment corrected. REVIEW WR-02 landscape variant deferred."
+    accepted_by: "mgfos207"
+    accepted_at: "2026-10-12T12:00:00Z"
 re_verification:
   previous_status: gaps_found
   previous_score: 32/34
