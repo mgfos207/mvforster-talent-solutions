@@ -9,8 +9,16 @@
 // Usage: npm run hero:render -- [--width 1920] [--height 1080] [--time 0]
 //                                [--out path.png] [--check]
 //                                [--layers all|gradient] [--diff-against path.png]
-//                                [--still desktop|mobile|all]
+//                                [--still mobile|tablet|desktop|all]
+//                                [--verify-stills]
 //                                [--break-shader gradient|points|lines]
+//
+// --still renders each variant at its own CSS size and dpr from
+// HERO_STILL_SIZES (02-07, REVIEW WR-04) after a tier gate proves the render
+// CSS width resolves to the same node tier as the variant's whole served
+// range. --verify-stills renders a fresh live t=0 frame per variant and
+// compares it with the committed WebP, plus a built-in negative control (the
+// old 780x1688@1 tablet-tier mobile render) that must FAIL the threshold.
 
 import { parseArgs } from "node:util";
 import { createServer } from "node:http";
@@ -27,7 +35,13 @@ import {
   HERO_STILL_PATHS,
   HERO_STILL_MAX_BYTES,
   HERO_STILL_TIME_SECONDS,
+  HERO_NARROW_BREAKPOINT_PX,
+  HERO_TABLET_BREAKPOINT_PX,
+  HERO_NODE_COUNT_DESKTOP,
+  HERO_NODE_COUNT_TABLET,
+  HERO_NODE_COUNT_MOBILE,
 } from "../src/components/hero/heroConfig.ts";
+import { nodeCountForWidth } from "../src/components/hero/nodeNetwork.ts";
 
 const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
@@ -56,6 +70,7 @@ const { values: args } = parseArgs({
     "diff-against": { type: "string" },
     still: { type: "string" },
     "break-shader": { type: "string" },
+    "verify-stills": { type: "boolean", default: false },
   },
 });
 
@@ -110,14 +125,14 @@ function buildHtml(w, h) {
 </html>`;
 }
 
-function buildEntryJs(w, h, t, layersArg) {
+function buildEntryJs(w, h, t, layersArg, dpr = 1) {
   return `
 import { createHeroScene } from "/hero/heroScene";
 import { HERO_SEED } from "/hero/heroConfig";
 
 try {
   const scene = createHeroScene({
-    dpr: 1,
+    dpr: ${Number(dpr)},
     seed: HERO_SEED,
     preserveDrawingBuffer: true,
     layers: ${JSON.stringify(layersArg)},
@@ -181,7 +196,7 @@ HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
 `;
 }
 
-function startServer(w, h, t, layersArg, breakShaderArg) {
+function startServer(w, h, t, layersArg, breakShaderArg, dpr = 1) {
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
       try {
@@ -205,7 +220,9 @@ function startServer(w, h, t, layersArg, breakShaderArg) {
         if (pathname === "/entry.js") {
           res.writeHead(200, { "Content-Type": "text/javascript" });
           res.end(
-            breakShaderArg ? buildBreakShaderEntryJs() : buildEntryJs(w, h, t, layersArg),
+            breakShaderArg
+              ? buildBreakShaderEntryJs()
+              : buildEntryJs(w, h, t, layersArg, dpr),
           );
           return;
         }
@@ -288,8 +305,10 @@ async function runChrome(chromeArgs) {
   });
 }
 
-function chromeBaseFlags(w, h) {
-  return [
+// w/h are CSS px. When dpr != 1 Chrome is forced to that device scale
+// factor, so the screenshot is (w*dpr) x (h*dpr) device pixels.
+function chromeBaseFlags(w, h, dpr = 1) {
+  const flags = [
     "--headless=new",
     "--no-sandbox",
     "--use-angle=swiftshader",
@@ -298,10 +317,12 @@ function chromeBaseFlags(w, h) {
     `--window-size=${w},${h}`,
     "--virtual-time-budget=8000",
   ];
+  if (dpr !== 1) flags.push(`--force-device-scale-factor=${dpr}`);
+  return flags;
 }
 
-async function renderOnce(serverUrl, w, h, outFile) {
-  const baseFlags = chromeBaseFlags(w, h);
+async function renderOnce(serverUrl, w, h, outFile, dpr = 1) {
+  const baseFlags = chromeBaseFlags(w, h, dpr);
 
   let dumpResult;
   try {
@@ -321,6 +342,15 @@ async function renderOnce(serverUrl, w, h, outFile) {
   if (!existsSync(outFile)) {
     throw new Error(`Chrome did not write a screenshot to ${outFile}`);
   }
+
+  const expectedW = Math.round(w * dpr);
+  const expectedH = Math.round(h * dpr);
+  const shot = parsePngDimensions(await readFile(outFile));
+  if (shot.width !== expectedW || shot.height !== expectedH) {
+    throw new Error(
+      `Screenshot ${outFile} is ${shot.width}x${shot.height}, expected ${expectedW}x${expectedH} (CSS ${w}x${h} @ dpr ${dpr})`,
+    );
+  }
 }
 
 function parsePngDimensions(buffer) {
@@ -332,15 +362,68 @@ function parsePngDimensions(buffer) {
   };
 }
 
-async function decodeRgb(pngPath) {
-  const pngBuffer = await readFile(pngPath);
-  const { width: pw, height: ph } = parsePngDimensions(pngBuffer);
+// dims: optional { width, height } for non-PNG inputs (e.g. the committed
+// WebP stills), whose size is known from HERO_STILL_SIZES rather than parsed
+// from a PNG IHDR header. The decoded byte length is checked against it.
+async function decodeRgb(imagePath, dims) {
+  let pw;
+  let ph;
+  if (dims) {
+    pw = dims.width;
+    ph = dims.height;
+  } else {
+    const pngBuffer = await readFile(imagePath);
+    ({ width: pw, height: ph } = parsePngDimensions(pngBuffer));
+  }
   const { stdout } = await execFileAsync(
     FFMPEG_PATH,
-    ["-v", "error", "-i", pngPath, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+    ["-v", "error", "-i", imagePath, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
     { encoding: "buffer", maxBuffer: 256 * 1024 * 1024 },
   );
+  if (stdout.length !== pw * ph * 3) {
+    throw new Error(
+      `${imagePath} decoded to ${stdout.length} bytes, expected ${pw}x${ph}x3 = ${pw * ph * 3}`,
+    );
+  }
   return { buffer: stdout, width: pw, height: ph };
+}
+
+// Live-vs-still comparison metrics (--verify-stills). meanAbsDiff is the
+// mean absolute per-channel difference on a 0-255 scale; bigDiffFraction is
+// the fraction of pixels where any channel differs by more than 32.
+// Thresholds tightened from the plan's starting 0.005 using measured values
+// (02-07): correct-tier renders vs committed WebP measure ~1.5e-6 big-diff
+// fraction (WebP noise only), while the old 780x1688@1 tablet-tier mobile
+// render measures ~5e-4. meanAbsDiff (~1.3 in both cases) cannot separate
+// them because the resolution-independent gradient dominates the frame, so
+// bigDiffFraction (node points/links) is the discriminating metric. 5e-5
+// keeps ~30x headroom over the passes and sits ~10x below the control.
+const VERIFY_MAX_MEAN_ABS_DIFF = 4;
+const VERIFY_MAX_BIG_DIFF_FRACTION = 0.00005;
+const VERIFY_BIG_DIFF_CHANNEL = 32;
+
+function compareFrames(a, b) {
+  if (a.width !== b.width || a.height !== b.height) {
+    throw new Error(`compareFrames size mismatch: ${a.width}x${a.height} vs ${b.width}x${b.height}`);
+  }
+  const total = a.width * a.height;
+  let sumAbs = 0;
+  let bigPixels = 0;
+  for (let i = 0; i < total; i++) {
+    const idx = i * 3;
+    const dr = Math.abs(a.buffer[idx] - b.buffer[idx]);
+    const dg = Math.abs(a.buffer[idx + 1] - b.buffer[idx + 1]);
+    const db = Math.abs(a.buffer[idx + 2] - b.buffer[idx + 2]);
+    sumAbs += dr + dg + db;
+    if (dr > VERIFY_BIG_DIFF_CHANNEL || dg > VERIFY_BIG_DIFF_CHANNEL || db > VERIFY_BIG_DIFF_CHANNEL) {
+      bigPixels++;
+    }
+  }
+  const meanAbsDiff = sumAbs / (total * 3);
+  const bigDiffFraction = bigPixels / total;
+  const pass =
+    meanAbsDiff <= VERIFY_MAX_MEAN_ABS_DIFF && bigDiffFraction <= VERIFY_MAX_BIG_DIFF_FRACTION;
+  return { meanAbsDiff, bigDiffFraction, pass };
 }
 
 function srgbToLinear(c) {
@@ -487,42 +570,124 @@ async function encodeStillWebp(pngPath, outWebp, pw, ph) {
   );
 }
 
+const STILL_VARIANTS = ["mobile", "tablet", "desktop"];
+// Upper probe for the open-ended (maxCssWidth === null) desktop range.
+const OPEN_RANGE_PROBE_PX = 3840;
+const NODE_COUNT_PARAMS = {
+  tabletBreakpointPx: HERO_TABLET_BREAKPOINT_PX,
+  narrowBreakpointPx: HERO_NARROW_BREAKPOINT_PX,
+  desktop: HERO_NODE_COUNT_DESKTOP,
+  tablet: HERO_NODE_COUNT_TABLET,
+  mobile: HERO_NODE_COUNT_MOBILE,
+};
+
+// Pre-render tier gate (REVIEW WR-04): the still's render CSS width must
+// resolve to the same node tier the live canvas uses across the still's
+// entire served range, otherwise the crossfade visibly changes node count.
+function assertStillTier(variant) {
+  const size = HERO_STILL_SIZES[variant];
+  const renderTier = nodeCountForWidth(size.cssWidth, NODE_COUNT_PARAMS);
+  const minTier = nodeCountForWidth(size.minCssWidth, NODE_COUNT_PARAMS);
+  const maxTier = nodeCountForWidth(size.maxCssWidth ?? OPEN_RANGE_PROBE_PX, NODE_COUNT_PARAMS);
+  if (renderTier !== minTier || renderTier !== maxTier) {
+    throw new Error(
+      `Tier mismatch for ${variant} still: cssWidth ${size.cssWidth} -> ${renderTier} nodes, served range ${size.minCssWidth}-${size.maxCssWidth ?? "inf"} -> ${minTier}/${maxTier} nodes`,
+    );
+  }
+}
+
+// Renders one live t=0 frame at CSS cssW x cssH and the given dpr to pngPath.
+async function renderFrame(cssW, cssH, dpr, pngPath) {
+  const server = await startServer(cssW, cssH, HERO_STILL_TIME_SECONDS, "all", undefined, dpr);
+  const { port } = server.address();
+  try {
+    await renderOnce(`http://127.0.0.1:${port}/`, cssW, cssH, pngPath, dpr);
+  } finally {
+    server.close();
+  }
+}
+
 async function renderStill(variant) {
+  assertStillTier(variant);
   const size = HERO_STILL_SIZES[variant];
   const pngPath = path.resolve(
     REPO_ROOT,
     `.planning/phases/02-webgl-hero/artifacts/hero-still-${variant}.png`,
   );
-  const server = await startServer(size.width, size.height, HERO_STILL_TIME_SECONDS, "all");
-  const { port } = server.address();
-  const serverUrl = `http://127.0.0.1:${port}/`;
 
-  try {
-    await renderOnce(serverUrl, size.width, size.height, pngPath);
-    const { buffer, width: pw, height: ph } = await decodeRgb(pngPath);
-    const metrics = analyze(buffer, pw, ph);
-    const failures = runChecks(metrics);
-    if (failures.length > 0) {
-      throw new Error(`Still check failed for ${variant}: ${failures.join("; ")}`);
-    }
-
-    const outWebp = path.resolve(REPO_ROOT, HERO_STILL_PATHS[variant]);
-    await mkdir(path.dirname(outWebp), { recursive: true });
-    const result = await encodeStillWebp(pngPath, outWebp, pw, ph);
-
-    // Pitfall 2: verify the output is really WebP (RIFF....WEBP magic),
-    // not a silently-wrong format.
-    const header = await readFile(outWebp);
-    const isRiff = header.length >= 12 && header.toString("ascii", 0, 4) === "RIFF";
-    const isWebp = header.length >= 12 && header.toString("ascii", 8, 12) === "WEBP";
-    if (!isRiff || !isWebp) {
-      throw new Error(`${outWebp} failed the RIFF/WEBP magic-byte check`);
-    }
-
-    console.log(JSON.stringify({ variant, ...result }));
-  } finally {
-    server.close();
+  await renderFrame(size.cssWidth, size.cssHeight, size.dpr, pngPath);
+  const { buffer, width: pw, height: ph } = await decodeRgb(pngPath);
+  const metrics = analyze(buffer, pw, ph);
+  const failures = runChecks(metrics);
+  if (failures.length > 0) {
+    throw new Error(`Still check failed for ${variant}: ${failures.join("; ")}`);
   }
+
+  const outWebp = path.resolve(REPO_ROOT, HERO_STILL_PATHS[variant]);
+  await mkdir(path.dirname(outWebp), { recursive: true });
+  const result = await encodeStillWebp(pngPath, outWebp, pw, ph);
+
+  // Pitfall 2: verify the output is really WebP (RIFF....WEBP magic),
+  // not a silently-wrong format.
+  const header = await readFile(outWebp);
+  const isRiff = header.length >= 12 && header.toString("ascii", 0, 4) === "RIFF";
+  const isWebp = header.length >= 12 && header.toString("ascii", 8, 12) === "WEBP";
+  if (!isRiff || !isWebp) {
+    throw new Error(`${outWebp} failed the RIFF/WEBP magic-byte check`);
+  }
+
+  console.log(JSON.stringify({ variant, ...result }));
+}
+
+// --verify-stills: fresh live t=0 render at each variant's reference CSS
+// size/dpr vs the committed WebP, plus a negative control proving the check
+// is sensitive to the original WR-04 bug (mobile still rendered at CSS
+// 780x1688 @ dpr 1, i.e. the 36-node tablet tier).
+async function verifyStills() {
+  const artifactsDir = path.resolve(REPO_ROOT, ".planning/phases/02-webgl-hero/artifacts");
+  let ok = true;
+
+  for (const variant of STILL_VARIANTS) {
+    assertStillTier(variant);
+    const size = HERO_STILL_SIZES[variant];
+    const pngPath = path.join(artifactsDir, `verify-${variant}.png`);
+    await renderFrame(size.cssWidth, size.cssHeight, size.dpr, pngPath);
+    const live = await decodeRgb(pngPath);
+    const still = await decodeRgb(path.resolve(REPO_ROOT, HERO_STILL_PATHS[variant]), {
+      width: size.width,
+      height: size.height,
+    });
+    const result = compareFrames(live, still);
+    if (!result.pass) ok = false;
+    console.log(JSON.stringify({ verify: variant, ...result }));
+  }
+
+  // Negative control: old buggy mobile configuration must FAIL.
+  const mobile = HERO_STILL_SIZES.mobile;
+  const controlPath = path.join(artifactsDir, "verify-control-mobile-780x1688-dpr1.png");
+  await renderFrame(mobile.width, mobile.height, 1, controlPath);
+  const control = await decodeRgb(controlPath);
+  const mobileStill = await decodeRgb(path.resolve(REPO_ROOT, HERO_STILL_PATHS.mobile), {
+    width: mobile.width,
+    height: mobile.height,
+  });
+  const controlResult = compareFrames(control, mobileStill);
+  console.log(
+    JSON.stringify({
+      verify: "negative-control",
+      config: `css ${mobile.width}x${mobile.height} dpr 1 vs ${HERO_STILL_PATHS.mobile}`,
+      meanAbsDiff: controlResult.meanAbsDiff,
+      bigDiffFraction: controlResult.bigDiffFraction,
+      expectedFail: true,
+      failedAsExpected: !controlResult.pass,
+    }),
+  );
+  if (controlResult.pass) {
+    console.error("verify-stills is not sensitive to tier mismatch");
+    ok = false;
+  }
+
+  if (!ok) process.exitCode = 1;
 }
 
 // --break-shader only: proves in real headless Chrome (not just the fake-gl
@@ -569,11 +734,24 @@ async function main() {
     return;
   }
 
+  if (args["verify-stills"]) {
+    try {
+      await verifyStills();
+    } catch (err) {
+      console.error(err && err.message ? err.message : String(err));
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   if (args.still) {
-    const variants = args.still === "all" ? ["desktop", "mobile"] : [args.still];
+    const variants = args.still === "all" ? STILL_VARIANTS : [args.still];
     for (const v of variants) {
-      if (!HERO_STILL_SIZES[v]) {
-        console.error(`Unknown --still variant: ${v} (expected desktop, mobile, or all)`);
+      // REVIEW IN-07: own-property lookup so prototype keys are rejected.
+      if (!Object.hasOwn(HERO_STILL_SIZES, v)) {
+        console.error(
+          `Unknown --still variant: ${v} (expected mobile, tablet, desktop, or all)`,
+        );
         process.exitCode = 1;
         return;
       }
