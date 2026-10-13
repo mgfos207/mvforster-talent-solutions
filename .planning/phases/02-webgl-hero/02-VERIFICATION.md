@@ -1,181 +1,219 @@
 ---
 phase: 02-webgl-hero
 verified: 2026-10-12T00:00:00Z
-status: gaps_found
-score: 32/34 must-haves verified
+status: human_needed
+score: 43/45 must-haves verified (2 uncertain, developer decision requested)
 overrides_applied: 0
-gaps:
-  - truth: "The node layout is deterministic from HERO_SEED, so the live first frame (t=0) matches the pre-rendered still (D-05/D-06 near-imperceptible crossfade)"
-    status: failed
-    reason: "The mobile still is rendered by scripts/hero-harness.mjs at dpr:1, resize(780, 1688). nodeCountForWidth(780) resolves to the TABLET tier (36 nodes) because 780 >= HERO_NARROW_BREAKPOINT_PX (768) — independently confirmed by reading nodeNetwork.ts:68-72. But the <picture> only serves hero-still-mobile.webp below 768px CSS width, where the live canvas resolves to the MOBILE tier (22 nodes). Node count, link distances, and point sizes therefore differ between the still and the live first frame on every real phone. Desktop at any non-16:9 size also mismatches because the still is object-cover cropped while live node coordinates are normalized to the full container. This causes a visible node/line pop during the 800ms crossfade, contradicting the 02-02 must-have verbatim. Documented independently in .planning/phases/02-webgl-hero/02-REVIEW.md WR-04; confirmed here by reading nodeNetwork.ts and hero-harness.mjs directly, not by trusting the review."
-    artifacts:
-      - path: "scripts/hero-harness.mjs"
-        issue: "Mobile still rendered at resize(780, 1688) (line ~103, per HERO_STILL_SIZES.mobile) — a CSS width that lands in the tablet node-count tier, not the mobile tier actually served to <768px viewports"
-      - path: "src/components/hero/nodeNetwork.ts"
-        issue: "nodeCountForWidth() breakpoint math (narrowBreakpointPx=768) places width=780 in the tablet tier while live devices under 768px CSS width get the mobile tier"
-    missing:
-      - "Render the mobile still at its actual served CSS size (e.g. dpr:2, resize(390, 844)) so node tier/link distance/point size match the live mobile path (REVIEW.md WR-04 fix)"
-      - "For desktop, either accept and document that the still/live match only holds at 16:9, or render the still with the same cover-fit projection used live"
-      - "Add a harness or smoke assertion that diffs the still against a live t=0 frame at a representative mobile/non-16:9 size so this regresses loudly, not silently"
-  - truth: "Hero degrades gracefully on any device (phase goal) and never swaps the polished still for a broken visual when WebGL itself fails (CLAUDE.md: 'If the WebGL or video fails, the page still loads fast, looks polished')"
-    status: failed
-    reason: "createHeroScene() never checks WebGL program link status after construction. Independently confirmed by reading node_modules/ogl/src/core/Program.js:69-85: ogl's setShaders() only console.warns on a vertex/fragment compile error or a link failure — it never throws. heroScene.ts (lines 104-117, 155-175) constructs three Program instances and never calls gl.getProgramParameter(..., LINK_STATUS) on any of them. useHeroRenderer's only fail-invisible path is the try/catch around createHeroScene() (lines 93-111), which cannot catch a failure ogl itself only logs. If any of the three shaders (gradient, points, lines) fails to compile or link on a given GPU/driver — plausible for the 3D simplex noise construct in shaders.ts on some mobile GPUs — the scene is still returned as 'successful'. render() then clears to an opaque black canvas (the Renderer is created with alpha:false), setReady(true) still fires on schedule, and the canvas crossfades in over the still with a live pause button attached, i.e. the hero silently becomes a flat black box instead of staying on the still. No unit test, harness check, or smoke-test run exercises this path. Documented independently in 02-REVIEW.md WR-01 (0 criticals / 5 warnings); the project's own CLAUDE.md treats this exact failure mode as a hard constraint, which is why it is reported here as failed rather than advisory."
-    artifacts:
-      - path: "src/components/hero/heroScene.ts"
-        issue: "No post-construction link-status check on the gradient/point/line Program instances; a link failure is silently swallowed by ogl and the scene is returned as if it succeeded"
-      - path: "src/components/hero/useHeroRenderer.ts"
-        issue: "The try/catch around createHeroScene() (lines 93-111) is the only fail-invisible guard and cannot observe an ogl-internal console.warn-only failure"
-    missing:
-      - "Add an assertLinked() check after each `new Program(...)` in heroScene.ts that throws when gl.getProgramParameter(program, gl.LINK_STATUS) is falsy, so the existing catch path in useHeroRenderer runs and the still stays visible (REVIEW.md WR-01 fix)"
-      - "A regression test that forces a shader compile/link error and asserts scene creation throws rather than returning a renderable scene"
-human_verification: []
+re_verification:
+  previous_status: gaps_found
+  previous_score: 32/34
+  gaps_closed:
+    - "Hero degrades gracefully on any device incl. shader-level failures: createHeroScene() now throws on gradient/points/lines link failure and releases the context, so the still stays visible (02-06)"
+    - "Live t=0 frame vs pre-rendered still on real phones: the mobile still is now rendered at CSS 390x844 @ dpr 2 (22-node mobile tier), plus a new tablet still for 768-1023px, so the node tier matches at every integer viewport width on overlay-scrollbar platforms (02-07)"
+  gaps_remaining: []
+  regressions: []
+human_verification:
+  - test: "Decide on REVIEW WR-01 (scrollbar and fractional-width tier mismatch). On a Windows/Linux desktop browser with classic scrollbars, open the home page at a viewport width of about 1024-1040px (for example, a 1280x800 laptop at 125% scaling gives 1024px) and at about 768-784px. Watch the 800ms crossfade from still to canvas."
+    expected: "Either the faint node rearrangement (48 nodes in the still vs 36 live, or 36 vs 22) during the crossfade is acceptable, in which case add the WR-01 override below, or it is not, in which case schedule the WR-01 fix (pick the live node tier with the same matchMedia queries the <picture> uses)."
+    why_human: "The mismatch is confirmed in code and in headless Chrome. Whether it is perceptible enough to matter is a visual judgment, and accepting a must-have deviation requires developer sign-off."
+  - test: "Decide on REVIEW WR-02 (portrait tablet and mobile stills served to landscape viewports). Open the home page on a landscape phone (for example 932x430 or 915x412 in device emulation with touch) and in a narrow desktop window (about 1000x700). Watch the crossfade."
+    expected: "Either the shift in gradient composition and node positions during the 800ms crossfade still reads as calm and acceptable, in which case add the WR-02 override below and correct the 'slightly / bounded' wording in heroConfig.ts, or it reads as a visible jump, in which case add a landscape still variant (WR-02 fix)."
+    why_human: "object-cover crops a 0.69-aspect still to the middle third in a ~2.1-aspect container, so the shift is large in geometric terms. Whether it is perceptually acceptable under a soft 800ms dissolve of a subtle layer is a visual call. The 02-07 planner pre-accepted off-aspect shifts, but only the developer can accept them."
+  - test: "Sanity-check the two new or regenerated stills on real portrait sizes (390x844 phone, 820x1180 tablet). Load the page, then reload with reduced motion on."
+    expected: "Same calm navy/teal look as the desktop UAT, a near-imperceptible crossfade on the capable path, and the still alone with no pause button under reduced motion."
+    why_human: "The 02-05 UAT covered desktop only. The tablet still is new and the mobile still was regenerated after that UAT. --verify-stills proves pixel parity with the live frame, but not that the result looks right to a person."
 ---
 
 # Phase 2: WebGL Hero Verification Report
 
 **Phase Goal:** Visitors see a distinctive, calm, cursor-reactive WebGL hero that never blocks first paint, degrades gracefully on any device, and meets accessibility requirements.
 **Verified:** 2026-10-12
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Status:** human_needed
+**Re-verification:** Yes, after gap closure by plans 02-06 and 02-07
+
+## Summary of Re-verification
+
+Both previous gaps are closed in the code. I checked the source and ran the checks myself instead of relying on the SUMMARYs.
+
+- **Gap 2 (shader failure gives a black canvas): CLOSED.**
+  - `heroScene.ts` calls `assertProgramLinked(gl, …)` right after each of the three `new Program(...)` calls (lines 124, 163, 174) and before each program is passed to a `Mesh`.
+  - `buildScene()` runs inside a try/catch (lines 219-225) that calls `releaseContext(gl)` and then rethrows.
+  - The throw happens before `container.appendChild(scene.canvas)` in `useHeroRenderer.ts`. The hook's catch sets `contextLost`, so `HeroCanvas` has `visible = false` and the `PauseButton` never renders.
+  - I ran `--break-shader gradient|points|lines` in real headless Chrome. All three give `HERO_EXPECTED_FAILURE:hero <name> program failed to link:lost=true` with exit 0. `--break-shader bogus` exits 1.
+- **Gap 1 (still and live t=0 frame use different node tiers on phones): CLOSED for the reported failure.**
+  - The mobile still is now CSS 390x844 @ dpr 2, so `ffprobe` reports 780x1688. That is the 22-node mobile tier.
+  - A new tablet still (1640x2360, 36 nodes) covers 768-1023px. Desktop stays at 48 nodes.
+  - `Hero.tsx` takes its `<picture>` media queries and image paths from `heroConfig`. A source-text test guards against them drifting.
+  - I ran `--verify-stills`. All three variants pass (bigDiffFraction ≤ 1.5e-6). The built-in negative control, the old 780px @ dpr 1 config, fails as expected (5.07e-4 > 5e-5).
+- **New review findings (REVIEW WR-01, WR-02): both are real; I confirmed each one myself.** I judge them residual polish limitations, not failures of the phase goal. However, they contradict the literal wording of two 02-07 must-haves, so the developer has to decide (see below). That is why the status is `human_needed`, not `passed`.
 
 ## Goal Achievement
 
-Human UAT for plan 02-05 (look/feel, crossfade, pointer/touch, pause, chooser, reduced motion, offscreen, context loss) was **already approved by the user in this session** (recorded in `02-05-SUMMARY.md`, commits `f02abf5`/`845d4a9` for the two UAT-driven bottom-fade fixes, `feba91c` for the smoke test). That sign-off is treated as satisfying all human-judgment truths below; it is not re-requested. The two failures below were found independently in code during this verification pass — they were not part of, and would not have been caught by, the UAT checklist as scoped (desktop Chrome, standard window size).
-
 ### Observable Truths
 
-| # | Truth (source plan) | Status | Evidence |
-|---|---|---|---|
-| 1 | ogl 1.0.11 exact-pinned, only new npm dependency (02-01) | ✓ VERIFIED | `package.json:18` and `package-lock.json:12` both show `"ogl": "1.0.11"` with no caret |
-| 2 | Mesh-gradient renders via ogl in headless Chrome, no shader errors (02-01) | ✓ VERIFIED | Ran `node scripts/hero-harness.mjs --check` myself: exit 0, produced a real PNG, no shader error output |
-| 3 | Gradient navy-dominant, D-01 contrast/palette budget held (02-01) | ✓ VERIFIED | Harness run today: `meanL 0.0186 <= 0.08`, `textBoxP99L 0.053 <= 0.183`, `warmFraction 0 <= 0.05`; visually confirmed navy/teal/scarce-coral in the rendered PNG |
-| 4 | One cycle = HERO_CYCLE_SECONDS (24s, in 20-30s band), periodic (02-01) | ✓ VERIFIED | `heroConfig.ts:34` sets `HERO_CYCLE_SECONDS = 24`; `scripts/hero-config.test.mjs` D-02 range assertion is part of the 47/47 passing `npm test` suite I ran |
-| 5 | Shader colors come from HERO_COLORS, unit test proves token parity (02-01) | ✓ VERIFIED | `heroConfig.ts` HERO_COLORS hex values match `globals.css` `@theme` tokens exactly (brand `#0B2545`, brandStrong `#071A33`, accent `#0F766E`, cta `#E76F51`); parity test is part of the passing suite |
-| 6 | createHeroScene() exposes stable contract (resize/setPointer/render/destroy/canvas/gl) (02-01) | ✓ VERIFIED | Read `heroScene.ts` — exact shape matches the 02-01 interface contract reused unchanged by 02-02/02-03 |
-| 7 | Node network: 48/36/22 nodes at the three breakpoints, low-opacity white points, faint lines (02-02) | ✓ VERIFIED | `heroConfig.ts` constants match exactly; `nodeNetwork.ts:68-72` implements the breakpoint logic; visually confirmed in rendered still/PNG |
-| 8 | Nodes drift toward pointer within radius, lines brighten, ease back on removal (02-02) | ✓ VERIFIED | `scripts/hero-network.test.mjs` D-04 tests pass (tests 44 "ease back toward home", 46 "line midpoint near pointer gets higher alpha") as part of 47/47 passing; human UAT step 3 approved live pointer behavior |
-| 9 | Node layout deterministic from seed so live t=0 matches pre-rendered still (02-02) | ✗ FAILED | See gaps — confirmed via code that mobile still (rendered at width 780) uses the tablet node tier (36) while the live mobile canvas (<768px) uses the mobile tier (22) |
-| 10 | Pre-rendered stills exist as WebP, <=61440 bytes, correct dimensions (02-02) | ✓ VERIFIED | `public/hero/hero-still-desktop.webp` = 7560 bytes, `hero-still-mobile.webp` = 4624 bytes, both well under budget; viewed both images directly — navy/teal/subtle-node look confirmed |
-| 11 | Nodes stay subtle: >200px but <5% frame diff vs gradient-only, still passes D-01 (02-02) | ✓ VERIFIED | Ran the harness `--diff-against` check myself: `diffPixels: 595` (>200, and 595 << 5% of 2,073,600 = 103,680); gradient-only harness run reused the same D-01 metrics within budget |
-| 12 | Canvas mounts only when canAnimateHero is true, unmounts on flip, no second WebGL probe (02-03) | ✓ VERIFIED | `HeroCanvasLoader.tsx` gates on `useCapabilities().canAnimateHero`; `grep` across `src/components/hero/`, `src/providers/`, `src/lib/` finds only one `getContext`-adjacent reference (the type annotation in heroScene.ts) |
-| 13 | ogl loaded via next/dynamic(ssr:false) inside a 'use client' file (02-03) | ✓ VERIFIED | `HeroCanvasLoader.tsx:12` is the only `next/dynamic(..., { ssr: false })` call in `src/` (grep confirmed) |
-| 14 | Render loop runs only when in-view AND tab-visible AND not paused AND not context-lost (02-03) | ✓ VERIFIED | `renderLoop.ts:17-19` `shouldRun()` implements exactly this AND-combination; wired into the rAF effect in `useHeroRenderer.ts:253` |
-| 15 | webglcontextlost: preventDefault, stop loop, hide canvas, remove pause control (02-03) | ✓ VERIFIED | `useHeroRenderer.ts:124-133` `onContextLost` calls `event.preventDefault()`, cancels rAF, sets `contextLost`; `HeroCanvas.tsx` ties both canvas visibility and pause-button rendering to `visible = ready && !contextLost` |
-| 16 | Canvas crossfades over HERO_CROSSFADE_MS (800ms), no flash/pop (02-03) | ✓ VERIFIED | `heroConfig.ts` `HERO_CROSSFADE_MS = 800`; `HeroCanvas.tsx` applies it as `transitionDuration`; human UAT step 2 approved live |
-| 17 | Mouse/touch attraction via passive listeners, never preventDefault (02-03) | ✓ VERIFIED | `useHeroRenderer.ts:209-220` — all pointer/touch listeners pass `{ passive: true }`; no `preventDefault()` call anywhere in the touch handlers |
-| 18 | Pause/play: native button, keyboard-focusable, visible focus ring, >=24x24px, correct aria-labels, only while live (02-03) | ✓ VERIFIED | `PauseButton.tsx` is a `<button>`, `h-10 w-10` (40x40px), `focus-visible:outline-2`, `aria-label` toggles between the two exact required strings; `HeroCanvas.tsx` only renders it when `visible` |
-| 19 | Pausing cancels rAF and freezes frame (no crossfade back); resuming has no jump (02-03) | ✓ VERIFIED | `shouldRun()` excludes `paused`; opacity in `HeroCanvas.tsx` is independent of `paused`; `lastTimestampRef` reset on resume (`useHeroRenderer.ts:265`) prevents a delta jump; human UAT step 5 approved live |
-| 20 | Pause state lives only in React state, no persistence (02-03) | ✓ VERIFIED | `grep -rn "localStorage\|sessionStorage\|document.cookie"` across hero files returns nothing |
-| 21 | Hero's server HTML shows pre-rendered still as first-paint background over bg-brand-strong, never blank (02-04) | ✓ VERIFIED | `Hero.tsx` renders the `<picture>` still unconditionally inside a `bg-brand-strong` section, before the client island |
-| 22 | public/office-bg.jpg no longer referenced by hero, file remains in public/ (02-04) | ✓ VERIFIED | `grep -rn "office-bg" src/ public/` finds zero references in `src/`; file still exists at `public/office-bg.jpg` (450KB) |
-| 23 | Hero.tsx stays a server component, mounts HeroCanvasLoader (02-04) | ✓ VERIFIED | `Hero.tsx` has no `'use client'` directive and imports/renders `<HeroCanvasLoader />` |
-| 24 | Healthcare-focused headline/subline; "technology"/"innovative companies" removed (02-04) | ✓ VERIFIED | `Hero.tsx` copy reads "Great care starts with the right people" / healthcare-admin-focused subline; neither banned phrase appears |
-| 25 | Two equal-weight glass pill chooser links, no coral, stack on mobile, visible focus ring (02-04) | ✓ VERIFIED | Shared `chooserLinkClass` uses `border-on-brand/40 bg-on-brand/10` (no coral/teal classes), `flex-col` → `md:flex-row`, `focus-visible:outline-2` |
-| 26 | #employers/#candidates resolve inside Services/Expertise; #services/#expertise keep working (02-04) | ✓ VERIFIED | `Services.tsx` has `id="employers"` and `id="services"` sections; `Expertise.tsx` has `id="candidates"` and `id="expertise"`; `Header.tsx` still links `/#services`, `/#expertise`, `/#contact` |
-| 27 | Chooser links are plain anchors, work without JS; smooth scroll only under reduced-motion:no-preference; lands below header; no choice stored (02-04) | ✓ VERIFIED | Plain `<a href="#employers">`/`<a href="#candidates">`; `globals.css` gates `scroll-behavior: smooth` inside `@media (prefers-reduced-motion: no-preference)`; `scroll-margin-top: calc(73px + 1rem)` on both ids; no storage calls found |
-| 28 | Empty CTA slot (mt-12, min-h-14) reserved, no visible stub (02-04) | ✓ VERIFIED | `<div data-hero-cta-slot className="mt-12 min-h-14" />` — empty, present |
-| 29 | Capable browser mounts canvas + pause control after hydration (02-05) | ✓ VERIFIED | Ran `node scripts/hero-smoke.mjs` myself against a fresh `npm run build`: `HERO_SMOKE_OK`, capable run assertions passed |
-| 30 | Reduced-motion forced: still+copy but no canvas/pause (02-05) | ✓ VERIFIED | Same smoke run — reduced-motion assertions passed |
-| 31 | Header height measured at 1440/390 matches scroll-margin-top CSS value (02-05) | ✓ VERIFIED | Smoke output: `{"width":1440,"headerHeight":73,"cssValue":73}` and `{"width":390,"headerHeight":73,"cssValue":73}` |
-| 32 | ogl ships in a lazy chunk, not a `<script>` in initial HTML, <=40KB gzipped (02-05) | ✓ VERIFIED | Smoke output: `{"chunk":"_next/static/chunks/2k64t956-ir_h.js","gzipBytes":18854,"inInitialHtml":false}` — 18.4KB, well under 40KB |
-| 33 | Human confirms look/feel, interactions, pause, chooser, reduced motion, context loss (02-05) | ✓ VERIFIED (human, already approved) | `02-05-SUMMARY.md` records the user's "approved" response to all 9 UAT steps; this verification does not re-request it per task instructions |
-| 34 | Hero degrades gracefully on any device incl. shader-level failures (phase goal + CLAUDE.md fail-invisible constraint) | ✗ FAILED | See gaps — `createHeroScene()` has no link-status check; a shader compile/link failure produces an opaque black canvas instead of the still, with zero test coverage |
+Rows 1-34 carry over from the initial verification. Rows that passed before got a regression check. The two previously failed rows got the full 3-level check. Rows 35-45 are the must-haves from the 02-06 and 02-07 plans.
 
-**Score:** 32/34 truths verified
+| # | Truth (source) | Status | Evidence |
+|---|---|---|---|
+| 1 | ogl 1.0.11 exact-pinned, only new dependency (02-01) | ✓ VERIFIED | Not touched by 02-06/07: `git diff 1dc6fb0 HEAD -- package.json` is empty |
+| 2 | Mesh gradient renders via ogl in headless Chrome, no shader errors (02-01) | ✓ VERIFIED | `--check` exits 0 today |
+| 3 | Gradient is navy-dominant and stays within the D-01 contrast/palette budget (02-01) | ✓ VERIFIED | Today's `--check`: meanL 0.0186, textBoxP99L 0.0530, warmFraction 0. Unchanged from the initial run, so the guards caused no regression |
+| 4 | 24s periodic cycle (02-01) | ✓ VERIFIED | Unchanged; covered by the 60/60 `npm test` run |
+| 5 | Shader colors come from HERO_COLORS, token-parity test (02-01) | ✓ VERIFIED | Unchanged; part of 60/60 |
+| 6 | Stable createHeroScene contract (02-01) | ✓ VERIFIED | `HeroSceneOptions`/`HeroScene` types and the returned object shape are unchanged (`heroScene.ts:45-78, 293-300`). Only the internals moved into `buildScene()` |
+| 7 | 48/36/22 nodes at the breakpoints (02-02) | ✓ VERIFIED | `nodeCountForWidth` is unchanged (`nodeNetwork.ts:68-72`) |
+| 8 | Pointer attraction and line highlight (02-02) | ✓ VERIFIED | Unchanged; network tests pass |
+| 9 | Node layout is deterministic from HERO_SEED, so the live t=0 frame matches the still (02-02, previous gap 1) | ✓ VERIFIED (previous gap closed) | The mobile still is now rendered at a mobile-tier width. `--verify-stills` passes for all three variants against a fresh live t=0 frame, and the negative control fails as expected. The desktop still is byte-identical to before (7560 B), which confirms determinism. Remaining edge cases are tracked separately in #39 and #44 |
+| 10 | Stills are WebP, ≤ 61440 B, at the correct dimensions (02-02) | ✓ VERIFIED | mobile 5092 B 780x1688, tablet 11740 B 1640x2360, desktop 7560 B 1920x1080. All start with RIFF/WEBP |
+| 11 | Nodes stay subtle (02-02) | ✓ VERIFIED | Unchanged node layer; the stills look subtle when viewed (I viewed the tablet and mobile stills directly) |
+| 12 | Canvas gated on canAnimateHero, no second WebGL probe (02-03) | ✓ VERIFIED | `HeroCanvasLoader.tsx` not modified since the gap plans |
+| 13 | ogl loaded via next/dynamic(ssr:false) (02-03) | ✓ VERIFIED | Smoke test: ogl chunk 19008 B gzipped, not in the initial HTML, not preloaded |
+| 14 | Render loop gating (02-03) | ✓ VERIFIED | `renderLoop.ts` and `useHeroRenderer.ts` are unchanged by 02-06/07 |
+| 15 | webglcontextlost handling (02-03) | ✓ VERIFIED | Unchanged |
+| 16 | 800ms crossfade (02-03) | ✓ VERIFIED | Unchanged |
+| 17 | Passive pointer and touch listeners (02-03) | ✓ VERIFIED | Unchanged |
+| 18 | Accessible pause button (02-03) | ✓ VERIFIED | Unchanged; the smoke capable run passes |
+| 19 | Pause freezes the frame, resume does not jump (02-03) | ✓ VERIFIED | Unchanged |
+| 20 | Pause state is not persisted (02-03) | ✓ VERIFIED | Unchanged |
+| 21 | First paint shows the still over bg-brand-strong, never blank (02-04) | ✓ VERIFIED | `Hero.tsx:25-50`: `<picture>` with two `<source>`s and the desktop `<img>`, rendered on the server. `out/index.html` contains all three still filenames and both media strings |
+| 22 | office-bg.jpg no longer used by the hero (02-04) | ✓ VERIFIED | Not reintroduced |
+| 23 | Hero.tsx stays a server component (02-04) | ✓ VERIFIED | No `'use client'`. The only new import is the pure, import-free `heroConfig` |
+| 24 | Healthcare copy (02-04) | ✓ VERIFIED | `Hero.tsx:59-66` unchanged |
+| 25 | Equal-weight glass chooser pills, no coral (02-04) | ✓ VERIFIED | Unchanged |
+| 26 | #employers/#candidates anchors plus existing ids (02-04) | ✓ VERIFIED | Unchanged |
+| 27 | Plain anchors, motion-gated smooth scroll, scroll-margin (02-04) | ✓ VERIFIED | Unchanged. Smoke header check 73/73 |
+| 28 | Empty CTA slot (02-04) | ✓ VERIFIED | `Hero.tsx:85` |
+| 29 | Capable browser mounts canvas and pause button (02-05) | ✓ VERIFIED | `node scripts/hero-smoke.mjs` against a fresh `npm run build`: HERO_SMOKE_OK |
+| 30 | Reduced motion shows the still with no canvas (02-05) | ✓ VERIFIED | Same smoke run |
+| 31 | Header height matches scroll-margin (02-05) | ✓ VERIFIED | 1440 → 73/73, 390 → 73/73. `git status` clean afterwards (the WR-04 rewrite did not trigger) |
+| 32 | ogl lazy chunk ≤ 40KB gzipped (02-05) | ✓ VERIFIED | 19008 B |
+| 33 | Human UAT of look and feel (02-05) | ✓ VERIFIED (human, approved earlier) | Approved earlier for desktop. The new tablet still and regenerated mobile still have not had a human look yet (human item 3) |
+| 34 | Hero degrades gracefully on any device, including shader failures (phase goal, previous gap 2) | ✓ VERIFIED (previous gap closed) | See #35-36. The throw happens before the canvas is appended, the catch sets `contextLost`, so no canvas and no pause button appear and the still remains |
+| 35 | A link failure in any program makes createHeroScene throw; still stays; no canvas or pause button (02-06) | ✓ VERIFIED | 3 `assertProgramLinked(gl` call sites. `--break-shader` passes for gradient, points, and lines. `useHeroRenderer.ts:93-111` catch → `setContextLost(true)` → `HeroCanvas` `visible=false` |
+| 36 | Context is released before the rethrow (02-06) | ✓ VERIFIED | `heroScene.ts:222-224`. Harness reports `lost=true` for all three programs. `releaseContext` swallows its own errors so it cannot hide the original one |
+| 37 | Capable-GPU rendering unchanged; `--check` passes (02-06) | ✓ VERIFIED | `--check` exit 0, same metrics as before |
+| 38 | Regression coverage at unit and browser level (02-06) | ✓ VERIFIED | `hero-gl-guards.test.mjs` has 6 tests inside the 60/60 run, plus the harness `--break-shader` mode, which rejects bad input. The SUMMARY records a negative control; I did not repeat it because it requires editing source |
+| 39 | Every still's tier matches the live tier "across that still's whole served media range" (02-07) | ? UNCERTAIN (WARNING) | Holds for every integer viewport width on overlay-scrollbar platforms, which covers all phones, tablets, and default macOS. **Does not hold** in a band about 15px wide above each breakpoint on classic-scrollbar desktop browsers, nor for fractional widths between 767 and 768px (REVIEW WR-01). I confirmed this in headless Chrome: at a 1030px viewport, `innerWidth` is 1030 but the full-bleed container is 1015, so the desktop still is served (48 nodes) while the canvas tier is tablet (36). At 775px, the tablet still is served while the container is 760 (mobile tier, 22). The site sets no `scrollbar-gutter` or overflow rule that would change this. Developer decision needed: see human item 1 |
+| 40 | Mobile still is CSS 390x844 @ dpr 2 (02-07) | ✓ VERIFIED | `heroConfig.ts:90-98`; `ffprobe` gives 780,1688 |
+| 41 | npm test fails loudly on a tier or dimension mismatch (02-07) | ✓ VERIFIED | `hero-stills.test.mjs:39-104`: tier vs min/max of the range, CSS×dpr dimensions, range tiling against the breakpoint constants, media strings, drift guard. 7/7 pass |
+| 42 | `--verify-stills` passes and its negative control fails (02-07) | ✓ VERIFIED | Ran it: mobile 1.52e-6, tablet 1.29e-6, desktop 4.82e-7 all pass. Control 5.07e-4 failed as expected. Exit 0 |
+| 43 | Hero.tsx `<picture>` is derived from heroConfig (02-07) | ✓ VERIFIED | `Hero.tsx:2-6, 27-48`; no literal paths or media queries |
+| 44 | Off-reference aspect ratios are a documented accepted limitation with only a "slight"/"bounded" shift (02-07) | ? UNCERTAIN (WARNING) | It is documented (`heroConfig.ts:68-87`). But the "slightly / bounded" wording does not hold for landscape viewports, which REVIEW WR-02 confirms from the aspect math. The 820x1180 portrait tablet still is served to 932x430 landscape phones and 1000x700 desktop windows, where `object-cover` keeps only about the middle third. The acceptance was made by the planner, not the developer. Developer decision needed: see human item 2 |
+| 45 | Stills ≤ 61440 B, RIFF/WEBP (02-07) | ✓ VERIFIED | See #10 |
+
+**Score:** 43/45 verified, 2 uncertain (WARNING, developer decision requested), 0 failed.
+
+### Materiality Judgment on REVIEW WR-01 / WR-02
+
+I checked whether these residuals undermine the phase goal or the D-05/D-06 must-haves. My conclusion is **no** for the phase goal and **partially** for the D-06 polish wording. Reasons:
+
+1. **No ROADMAP success criterion is affected.** SC 1-5 (gradient plus responsive nodes, a static fallback with no layout shift or blank area, the pause control, the chooser, offscreen and context-loss handling) all hold in every affected case. The still is always a correct, on-palette, contrast-safe image, and the canvas is always a correct live render. Only the 800ms handoff between them is imperfect.
+2. **The visual effect is small.** In the built-in negative control, a full tier mismatch (36 vs 22 nodes) changes about 0.05% of pixels (bigDiffFraction 5.07e-4), and the mean per-channel difference does not move (1.34 vs 1.31). Nodes are 3px at alpha 0.35 and lines are at alpha 0.1. The change is a cross-dissolve over 800ms, not an instant swap. That fits "calm".
+3. **WR-01 affects a narrow band.** It needs a classic-scrollbar desktop browser with a viewport inside about 15px above 768 or 1024, or a fractional width between 767 and 768. That is uncommon, but a 1280px laptop at 125% scaling lands exactly at 1024, so it is not imaginary.
+4. **WR-02 affects a more common case** (landscape phones), and there the gradient composition shifts too, not just the nodes. It is still a soft change from one low-frequency gradient to another, and it falls under a limitation the 02-07 plan deliberately scoped as accepted. The doc comment understates it, though.
+
+These do not justify FAILED / `gaps_found` against the phase goal. They also cannot be marked VERIFIED, because must-haves #39 and #44 are literally untrue in these cases and no override exists. Accepting a deviation needs developer sign-off, so this is escalated as `human_needed` with ready-made overrides. **If the developer declines either override, treat that item as a gap.** The WR-01 fix is small and well defined: derive the tier from the same `matchMedia` queries the `<picture>` uses, and switch to range syntax to remove the fractional gap.
+
+**Suggested overrides (add to frontmatter only if accepted):**
+
+```yaml
+overrides:
+  - must_have: "Every pre-rendered still is rendered at a CSS width whose node tier matches the tier the live canvas uses across that still's whole served media range"
+    reason: "Holds at every integer width on overlay-scrollbar platforms (all phones/tablets). On classic-scrollbar desktops a ~15px band above 768/1024 (and fractional 767-768) serves a still one tier off; the effect is a faint node rearrangement under an 800ms dissolve (~0.05% of pixels). Accepted as residual polish; REVIEW WR-01 fix can be scheduled later."
+    accepted_by: "{name}"
+    accepted_at: "{ISO timestamp}"
+  - must_have: "Non-reference aspect ratios within a tier are a documented, accepted limitation"
+    reason: "Portrait tablet/mobile stills on landscape viewports shift gradient composition and node positions during the 800ms crossfade by more than 'slightly'. Judged acceptable on device; heroConfig.ts comment to be corrected. REVIEW WR-02 landscape variant deferred."
+    accepted_by: "{name}"
+    accepted_at: "{ISO timestamp}"
+```
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
-| `src/components/hero/heroConfig.ts` | Tuning constants + hexToRgb01 | ✓ VERIFIED | All required exports present, matches globals.css tokens |
-| `src/components/hero/shaders.ts` | GLSL source strings | ✓ VERIFIED | Exports present, used by heroScene.ts |
-| `src/components/hero/heroScene.ts` | ogl scene factory | ✓ VERIFIED | Contract matches 02-01 interface exactly; wired into useHeroRenderer |
-| `src/components/hero/nodeNetwork.ts` | Node simulation + buffers | ✓ VERIFIED | All required exports present, 47/47 unit tests cover it |
-| `src/components/hero/renderLoop.ts` | Pure loop gating math | ✓ VERIFIED | shouldRun/advanceClock/frameIntervalFor/clampDpr all present and wired |
-| `src/components/hero/useHeroRenderer.ts` | Scene lifecycle hook | ✓ VERIFIED | All observers/listeners wired and cleaned up on unmount |
-| `src/components/hero/HeroCanvas.tsx` | Client canvas container | ✓ VERIFIED | Crossfade + pause placement confirmed |
-| `src/components/hero/PauseButton.tsx` | Accessible toggle | ✓ VERIFIED | Native button, correct aria-labels, sized correctly |
-| `src/components/hero/HeroCanvasLoader.tsx` | Only ssr:false call + gate | ✓ VERIFIED | Confirmed sole next/dynamic(ssr:false) usage in src/ |
-| `src/components/sections/Hero.tsx` | Server hero w/ still, copy, chooser, CTA slot | ✓ VERIFIED | Bottom fade correctly absent post-UAT fix |
-| `public/hero/hero-still-desktop.webp`, `hero-still-mobile.webp` | LCP-safe fallback stills | ✓ VERIFIED | Both exist, under byte budget, visually correct |
-| `scripts/hero-harness.mjs` | Headless-Chrome render harness | ✓ VERIFIED | Ran it directly: palette/contrast and subtlety-diff checks both pass |
-| `scripts/hero-smoke.mjs` | Built-site smoke test | ✓ VERIFIED | Ran it directly against a fresh build: HERO_SMOKE_OK |
-| `scripts/hero-config.test.mjs`, `hero-network.test.mjs`, `hero-loop.test.mjs` | node:test coverage | ✓ VERIFIED | Part of 47/47 passing `npm test` |
+| `src/components/hero/glGuards.ts` | Import-free assertProgramLinked/releaseContext | ✓ VERIFIED | 50 lines, no imports, fixed error message, swallowing release |
+| `src/components/hero/heroScene.ts` | Link assertions plus release on construction failure | ✓ VERIFIED | 3 assertions; try/catch around `buildScene` |
+| `scripts/hero-gl-guards.test.mjs` | 6 fake-gl unit tests | ✓ VERIFIED | 6 `test(` blocks, all pass |
+| `scripts/hero-harness.mjs` | `--break-shader`, dpr-aware stills, tier gate, `--verify-stills` | ✓ VERIFIED | Tier gate `:594`, `Object.hasOwn` `:751`, `--force-device-scale-factor` `:320`, control check `:686`. All modes run |
+| `src/components/hero/heroConfig.ts` | Extended still contract, SRC, MEDIA | ✓ VERIFIED (with #44 wording caveat) | `:88-137` |
+| `scripts/hero-stills.test.mjs` | Tier, range, and drift tests | ✓ VERIFIED | 7/7 pass |
+| `public/hero/hero-still-{mobile,tablet,desktop}.webp` | Tier-matched stills within budget | ✓ VERIFIED | Dimensions and sizes above; viewed directly, on palette |
+| `src/components/sections/Hero.tsx` | Config-driven `<picture>` | ✓ VERIFIED | Wired; emitted into `out/index.html` |
 
 ### Key Link Verification
 
-| From | To | Via | Status | Details |
-|---|---|---|---|---|
-| heroScene.ts | ogl | named imports | ✓ WIRED | `import { Renderer, Program, Mesh, Triangle, Transform, Geometry } from "ogl"` |
-| heroScene.ts | heroConfig.ts | HERO_COLORS → hexToRgb01 → uniforms | ✓ WIRED | Confirmed in Program uniform construction |
-| HeroCanvasLoader.tsx | CapabilitiesProvider | useCapabilities().canAnimateHero | ✓ WIRED | Gate confirmed, `return null` when false |
-| HeroCanvasLoader.tsx | HeroCanvas.tsx | dynamic(ssr:false) | ✓ WIRED | Confirmed |
-| useHeroRenderer.ts | heroScene.ts | createHeroScene/destroy lifecycle | ✓ WIRED | Confirmed create on mount, destroy in cleanup |
-| useHeroRenderer.ts | webglcontextlost | canvas listener + preventDefault | ✓ WIRED | Confirmed |
-| Hero.tsx | HeroCanvasLoader.tsx | import + render | ✓ WIRED | Confirmed |
-| Hero.tsx | public/hero/*.webp | `<picture>` source + img | ✓ WIRED | Confirmed |
-| Hero chooser links | Services/Expertise ids | href="#employers"/"#candidates" | ✓ WIRED | Confirmed ids present in both target sections |
+| From | To | Via | Status |
+|---|---|---|---|
+| heroScene.ts | glGuards.ts | `assertProgramLinked(gl, …)` ×3, `releaseContext(gl)` | ✓ WIRED |
+| heroScene.ts throw | useHeroRenderer.ts catch | try/catch → `setContextLost(true)` → `HeroCanvas` `visible=false` | ✓ WIRED (proven by the throw in the real browser; the hook is unchanged) |
+| hero-harness.mjs | nodeNetwork.ts | `nodeCountForWidth` tier gate before render | ✓ WIRED |
+| Hero.tsx | heroConfig.ts | `HERO_STILL_SRC/MEDIA/SIZES` import | ✓ WIRED |
+| hero-stills.test.mjs | heroConfig + nodeNetwork | tier parity asserts | ✓ WIRED |
+| `<picture>` media (viewport) | live tier (container width) | none; they are measured differently | ⚠️ PARTIAL: they diverge by the scrollbar width (#39, WR-01) |
 
-### Behavioral Spot-Checks
+### Data-Flow Trace (Level 4)
+
+| Artifact | Data | Source | Real | Status |
+|---|---|---|---|---|
+| Hero `<picture>` | still srcs/media | `heroConfig` constants → static HTML | Yes (`out/index.html` contains all three srcs and both media strings) | ✓ FLOWING |
+| Hero canvas | node tier | `container.getBoundingClientRect().width` / ResizeObserver → `nodeCountForWidth` | Yes | ✓ FLOWING (see WR-01 for the width-basis divergence) |
+
+### Behavioral Spot-Checks (all run by me in this pass)
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
-| Unit test suite | `npm test` | 47/47 pass | ✓ PASS |
-| Type checking | `npx tsc --noEmit` | no output / exit clean | ✓ PASS |
-| Lint | `npm run lint` | 0 errors, 3 pre-existing unrelated warnings (`goals/page.tsx`) | ✓ PASS |
-| Static build | `npm run build` | succeeds, 4 static routes generated | ✓ PASS |
-| Built-site smoke test | `node scripts/hero-smoke.mjs` | `HERO_SMOKE_OK` | ✓ PASS |
-| Render harness D-01 contrast/palette check | `node scripts/hero-harness.mjs --check` | exit 0, meanL/p99/warmFraction all within budget | ✓ PASS |
-| Node-network subtlety diff check | `node scripts/hero-harness.mjs --diff-against` | diffPixels 595 (>200, <5% of frame) | ✓ PASS |
-| Working tree cleanliness after smoke run | `git status --short` | only pre-existing untracked `.claude/`, `.planning/HANDOFF.json` — no source files dirtied | ✓ PASS |
+| Unit tests | `npm test` | 60/60 pass | ✓ PASS |
+| Types | `npx tsc --noEmit` | exit 0, no output | ✓ PASS |
+| Lint | `npm run lint` | 0 errors, 3 earlier unrelated `<img>` warnings | ✓ PASS |
+| Shader-failure guard (real Chrome) | `hero-harness.mjs --break-shader gradient/points/lines` | all `ok:true`, `lost=true`; `bogus` exits 1 | ✓ PASS |
+| Still/live parity | `hero-harness.mjs --verify-stills` | 3/3 pass, negative control failed as expected, exit 0 | ✓ PASS |
+| D-01 budget | `hero-harness.mjs --check` | exit 0, metrics unchanged | ✓ PASS |
+| Static build | `npm run build` | 4 static routes; all three stills and both media queries in `out/index.html` | ✓ PASS |
+| Built-site smoke | `node scripts/hero-smoke.mjs` | HERO_SMOKE_OK; `git status` clean afterwards | ✓ PASS |
+| WR-01 mechanism | headless Chrome, scrollable page at 1030/775 wide | container 1015/760 vs `innerWidth` 1030/775; media query picks desktop/tablet still | Confirms WR-01 (#39) |
 
 ### Probe Execution
 
-Not applicable — this is a Next.js feature phase, not a migration/tooling phase with declared `probe-*.sh` scripts. `scripts/hero-smoke.mjs` and `scripts/hero-harness.mjs` serve the equivalent role and were executed directly above.
+Not applicable. There are no `probe-*.sh` scripts. `hero-harness.mjs` and `hero-smoke.mjs` fill that role and were run directly, as listed above.
 
 ### Requirements Coverage
 
-| Requirement | Source Plan | Description | Status | Evidence |
-|---|---|---|---|---|
-| HERO-01 | 02-01, 02-04 | WebGL mesh-gradient background in navy/teal/coral | ✓ SATISFIED | Harness-rendered frame confirmed navy-dominant with teal currents and scarce coral; wired into Hero.tsx |
-| HERO-02 | 02-02, 02-03 | Connected-nodes network responds to cursor/touch | ✓ SATISFIED | Node network code + tests + human UAT step 3/4 approval |
-| HERO-03 | 02-02, 02-04, 02-05 | Static fallback for non-WebGL/reduced-motion devices, no layout shift/blank | ✓ SATISFIED (capability-gated path); ⚠️ partial — see gap 2 for the shader-failure edge case not covered by this requirement's literal scope but adjacent to it | Smoke test reduced-motion run confirmed still+no-canvas; capability gating confirmed in code |
-| HERO-04 | 02-03, 02-05 | Keyboard-accessible pause/resume control | ✓ SATISFIED | PauseButton code + smoke test (capable run asserts aria-label) + human UAT step 5 |
-| HERO-05 | 02-04 | Audience chooser jumps to matching section | ✓ SATISFIED | Chooser links + anchor ids confirmed; human UAT step 6 |
-| HERO-06 | 02-03, 02-05 | Stops rendering offscreen/hidden tab; recovers from context loss via fallback | ✓ SATISFIED | shouldRun() gating confirmed; webglcontextlost handler confirmed; human UAT steps 8/9 |
+| Requirement | Source Plans | Status | Evidence |
+|---|---|---|---|
+| HERO-01 | 02-01, 02-04, 02-05 | ✓ SATISFIED | Gradient renders; D-01 check passes; wired into Hero |
+| HERO-02 | 02-02, 02-03, 02-05, 02-07 | ✓ SATISFIED | Node network, pointer tests, tier-matched stills |
+| HERO-03 | 02-02, 02-04, 02-05, 02-06, 02-07 | ✓ SATISFIED | Reduced-motion smoke; shader-failure path now falls back to the still; three stills, always a non-blank first paint |
+| HERO-04 | 02-03, 02-05 | ✓ SATISFIED | Pause button; smoke test |
+| HERO-05 | 02-04, 02-05 | ✓ SATISFIED | Chooser anchors |
+| HERO-06 | 02-03, 02-05, 02-06 | ✓ SATISFIED | Loop gating, context-loss handling, context release on construction failure |
 
-No orphaned requirements — all 6 HERO-* IDs declared in REQUIREMENTS.md are claimed by at least one of the 5 plans, and all are marked Complete there (cross-referenced against plan frontmatter `requirements:` fields).
+No orphaned requirements. REQUIREMENTS.md maps exactly HERO-01..06 to Phase 2, and every one is claimed by at least one plan's `requirements:` field.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |---|---|---|---|---|
-| `src/components/hero/heroScene.ts` | 104-117, 155-175 | No post-construction WebGL program link-status check | 🛑 BLOCKER (see gap 2) | Shader link failure silently produces an opaque black hero instead of the still |
-| `src/components/hero/nodeNetwork.ts` + `scripts/hero-harness.mjs` | nodeCountForWidth breakpoint math vs. still render width | Still/live first-frame mismatch | 🛑 BLOCKER (see gap 1) | Visible node/line pop during crossfade on real mobile devices |
-| `src/components/hero/heroScene.ts` | 92-195 | A throw partway through createHeroScene (e.g. from gap 2's future fix) leaks the live GL context — no cleanup path releases it | ⚠️ WARNING (REVIEW.md WR-02) | Could exhaust the ~16-context browser limit on repeated failures; does not block the current goal but will matter once WR-01 is fixed |
-| `src/components/hero/useHeroRenderer.ts` | 277-281 | Strict `<` comparison on vsync-aligned frame timestamps for the 30fps narrow-viewport cap | ⚠️ WARNING (REVIEW.md WR-03) | Pacing wobbles between ~20-30fps on narrow viewports; a polish issue, not a goal blocker |
-| `scripts/hero-smoke.mjs` | 384-449 | Script can rewrite `src/app/globals.css` and spawn `npm run build` as a side effect of a "test" if the header-height measurement mismatches | ⚠️ WARNING (REVIEW.md WR-05) | Did not trigger in this run (measured 73/73 matched), but is a latent CI/pre-push hazard if a later phase changes header height |
-| `src/components/hero/useHeroRenderer.ts` | 94-103 | DPR captured once at mount, never recomputed on cross-breakpoint resize | ℹ️ INFO (REVIEW.md IN-01) | Minor perf/sharpness edge case, not a goal blocker |
+| `useHeroRenderer.ts` / `Hero.tsx` | 88-91, 156-159 / 27-36 | Live tier is chosen from container width; the still is chosen by a viewport media query | ⚠️ WARNING (REVIEW WR-01, #39) | Still/live tier mismatch in a ~15px band on classic-scrollbar desktops and for fractional 767-768px widths |
+| `heroConfig.ts` | 68-87 | Comment calls the off-aspect shift "bounded"/"slight" | ⚠️ WARNING (REVIEW WR-02, #44) | Understates the landscape-viewport shift; no test measures it |
+| `useHeroRenderer.ts` | 277-281 | 30fps cap wobbles to 20fps | ⚠️ WARNING (REVIEW WR-03, carried) | Pacing polish only; not a goal blocker |
+| `scripts/hero-smoke.mjs` | 384-450 | Test can rewrite `globals.css` and rebuild | ⚠️ WARNING (REVIEW WR-04, carried) | Did not trigger today. A latent hazard once Phase 3 changes the header |
+| `Services.tsx` | 9, 16 | `hover:scale-105` with no reduced-motion guard | ℹ️ INFO (REVIEW IN-11) | Outside the hero; belongs with Phase 3/4 section work |
+| `layout.tsx` | 12-13 | Tech-recruiting metadata | ℹ️ INFO (REVIEW IN-12) | Deferred to Phase 4 in 02-CONTEXT |
 
-No `TBD`/`FIXME`/`XXX` debt markers found in any Phase 2 file (one false-positive grep hit on a GLSL `.xxx` swizzle in `shaders.ts`, not a debt marker).
+No TBD/FIXME/XXX debt markers in any file changed by 02-06/02-07.
 
 ### Human Verification Required
 
-None. All human-judgment items (look/feel, crossfade, pointer/touch, pause semantics, chooser scroll, reduced motion, offscreen/hidden-tab, context loss) were already covered by the Task 2 UAT in `02-05-SUMMARY.md` and approved by the user in this session (commits `f02abf5`, `845d4a9` for the two UAT-driven fixes). Per the task brief, this sign-off is accepted as-is and not re-requested.
+1. **WR-01 decision (scrollbar and fractional-width tier band).** On a Windows/Linux classic-scrollbar browser at a viewport about 1024-1040px wide (and about 768-784px), watch the crossfade. Either accept it (add the WR-01 override above) or schedule the small matchMedia-based tier fix.
+2. **WR-02 decision (landscape viewports).** On a landscape phone (932x430 or 915x412, touch emulation) and in a 1000x700 desktop window, watch the crossfade. Either accept it (add the WR-02 override above and correct the heroConfig.ts wording) or add a landscape still variant.
+3. **First human look at the new stills.** At 390x844 and 820x1180, confirm the calm look and a near-imperceptible crossfade, and confirm that with reduced motion the still shows alone with no pause button. The 02-05 UAT was desktop-only.
 
 ### Gaps Summary
 
-Two code-level defects were found independently during this verification (both corroborated by, but verified beyond, `02-REVIEW.md`'s WR-01 and WR-04 — I re-derived each from the actual source rather than trusting the review's prose):
+There are no blocking gaps. Both earlier blockers are closed in code and proven by checks I ran myself: the shader link guard with context release, and the tier-matched stills with a sensitivity-proven `--verify-stills`. Every earlier truth passed its regression check.
 
-1. **Still/live first-frame mismatch (02-02 must-have, guaranteed on every real mobile device).** The pre-rendered mobile still is generated at a CSS width (780px) that lands in the *tablet* node-density tier, while the live mobile canvas — served to the same still via the `max-width: 767px` media query — uses the *mobile* tier. This is not a rare edge case; it reproduces on every phone, every time, and is independently confirmed by reading the exact breakpoint math in `nodeNetwork.ts`. It directly falsifies the literal 02-02 must-have truth that the live first frame matches the still.
-
-2. **Shader-failure fallback has no safety net (phase goal "degrades gracefully on any device" + CLAUDE.md's explicit fail-invisible constraint).** `ogl`'s `Program` class never throws on a compile or link failure — confirmed by reading `node_modules/ogl/src/core/Program.js` directly — it only `console.warn`s. `heroScene.ts` never checks link status itself. The only fail-invisible path in the hook is a try/catch that an ogl-internal warn can never trigger. If this phase's specific shaders (notably the 3D simplex noise gradient) fail to link on some mobile GPU/driver, the result is an opaque black hero with a live (but useless) pause button, not the polished still. This path has zero automated test coverage anywhere in the phase.
-
-Both are real, reproducible, and verified in source — not speculative. Neither is mitigated, deferred to a later phase in ROADMAP.md (checked Phase 3 and Phase 4 success criteria — neither mentions this), nor covered by the human UAT as scoped (standard-size desktop Chrome window, not mobile width, and no deliberate shader-failure injection).
-
-Both failures are scoped and have concrete, already-documented fixes in `02-REVIEW.md` (WR-04 and WR-01 respectively) that do not require re-opening any of the five plans' broader designs — they are targeted bug fixes to `heroScene.ts` / `scripts/hero-harness.mjs`. Recommend a focused gap-closure plan before Phase 3 builds further UI on top of `Hero.tsx`.
-
-If the team judges either defect an acceptable risk to carry forward (e.g., the still/live mismatch is visually minor in practice, or shader-link failures are considered sufficiently rare on target devices), add an `overrides:` entry to this file's frontmatter per `/gsd:plan-phase 2 --gaps` conventions, and re-run verification.
+Two 02-07 must-haves (#39, #44) are not literally true for some viewports, as the new code review found and I confirmed independently. I judge them D-06 crossfade-polish limitations of small visual size that do not touch any ROADMAP success criterion. They are escalated for a developer decision rather than marked failed. If either override is declined, the item becomes a gap for `/gsd:plan-phase 2 --gaps`.
 
 ---
 
