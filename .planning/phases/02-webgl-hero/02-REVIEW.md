@@ -2,19 +2,21 @@
 phase: 02-webgl-hero
 reviewed: 2026-10-12T00:00:00Z
 depth: standard
-files_reviewed: 20
+files_reviewed: 22
 files_reviewed_list:
-  - package.json
   - scripts/hero-config.test.mjs
+  - scripts/hero-gl-guards.test.mjs
   - scripts/hero-harness.mjs
   - scripts/hero-loop.test.mjs
   - scripts/hero-network.test.mjs
   - scripts/hero-smoke.mjs
+  - scripts/hero-stills.test.mjs
   - src/app/globals.css
   - src/app/layout.tsx
   - src/components/hero/HeroCanvas.tsx
   - src/components/hero/HeroCanvasLoader.tsx
   - src/components/hero/PauseButton.tsx
+  - src/components/hero/glGuards.ts
   - src/components/hero/heroConfig.ts
   - src/components/hero/heroScene.ts
   - src/components/hero/nodeNetwork.ts
@@ -26,147 +28,220 @@ files_reviewed_list:
   - src/components/sections/Services.tsx
 findings:
   critical: 0
-  warning: 5
-  info: 9
-  total: 14
+  warning: 4
+  info: 12
+  total: 16
 status: issues_found
 ---
 
-# Phase 2: Code Review Report
+# Phase 2: Code Review Report (re-review after 02-06 / 02-07)
 
 **Reviewed:** 2026-10-12
 **Depth:** standard
-**Files Reviewed:** 20
+**Files Reviewed:** 22
 **Status:** issues_found
 
 ## Summary
 
-I reviewed the WebGL hero stack: the ogl scene, the node network, the render-loop helpers, the React lifecycle hook, the loader and pause control, the hero section, and the Node test, harness, and smoke scripts. I also read the ogl 1.0.11 sources (`Program.js`, `Renderer.js`, `Geometry.js`) and `useCapabilitySignals.ts` to check how they behave at the boundaries.
+This is a re-review after gap-closure plans 02-06 (shader link-failure guard and context release) and 02-07 (tier-matched stills). I re-read every listed file, including the new `glGuards.ts`, `hero-gl-guards.test.mjs`, and `hero-stills.test.mjs`, and checked ogl's `Geometry.js` draw-range handling.
 
-The lifecycle work holds up. Every listener and observer is removed on unmount. The rAF loop is gated on in-view, tab-visible, paused, and context-lost. The canvas is client-only through `dynamic(..., { ssr: false })`. Reduced motion unmounts the subtree through `canAnimateHero`. A resize while paused redraws the frozen frame.
+**02-06 is correct.** `buildScene()` runs inside a try/catch. Each of the three programs is checked with `assertProgramLinked`, and `releaseContext` frees the context before the error is rethrown. The guard also covers a context lost during construction: `getProgramParameter` returns `null`, so the assertion throws and the still stays visible. The `--break-shader` harness mode proves this in real Chrome, so WR-01 and WR-02 are closed.
 
-I found no security or data-loss issues. The defects are in the fail-invisible contract, the still-to-live crossfade, frame pacing, and a smoke script with side effects:
+**02-07 fixed the case it targeted.** The mobile still is now rendered at 390x844@2 on the 22-node tier, and `Hero.tsx` takes its media queries, sources, and dimensions from `heroConfig`. Two weak spots remain, though:
 
-- If a shader fails to compile or link, the scene does not throw. An opaque black canvas then fades in over the still, along with a live pause button.
-- The mobile still is rendered on a different node and link scale than the live mobile canvas. The "still == first live frame" guarantee therefore fails on phones and on any viewport that is not 16:9.
-- The 30fps cap on narrow screens uses a strict `<` on vsync-aligned timestamps, so actual pacing wobbles between 30 and 20 fps.
-- `hero-smoke.mjs` rewrites `src/app/globals.css` and runs `npm run build` as a side effect of a "test".
+- **Scrollbars and fractional widths:** the `<picture>` media queries measure the viewport including the scrollbar, but the live tier comes from the container width, which excludes it. On desktop browsers with classic scrollbars, the still and the live canvas pick different tiers in a band of about 15px above each breakpoint. Non-integer widths between 767 and 768px match neither media query.
+- **Wrong aspect for the tablet still:** the tablet still is portrait (820x1180), but it is served to every 768–1023px viewport, including landscape phones and narrow desktop windows. There `object-cover` crops away most of it. The "bounded shift" in the heroConfig comment is therefore not small in those cases.
+
+WR-03 (30fps pacing) and WR-05 (the smoke script rewrites source) were not addressed. Most earlier Info items are also still open.
+
+### Prior findings status
+
+| ID | Title | Status |
+|----|-------|--------|
+| WR-01 | Shader compile/link failure not detected | **Resolved** (`heroScene.ts:124,163,174`, `glGuards.ts:28-36`, harness `--break-shader`) |
+| WR-02 | Throw mid-construction leaks the WebGL context | **Resolved** (`heroScene.ts:219-225`, `glGuards.ts:43-50`) |
+| WR-03 | 30fps cap wobbles to 20fps | **Open** (`useHeroRenderer.ts:277-281` unchanged), re-filed as WR-03 |
+| WR-04 | Still does not match the live first frame | **Partially resolved**: integer-width tier parity is fixed; the remaining gaps are filed as new WR-01 and WR-02 |
+| WR-05 | Smoke test rewrites `globals.css` and rebuilds | **Open** (`hero-smoke.mjs:384-450` unchanged), re-filed as WR-04 |
+| IN-01 | DPR captured once at mount | **Open**, IN-01 |
+| IN-02 | Context-loss state reaches callbacks late; `destroy()` on a lost context | **Open**, IN-02 |
+| IN-03 | Pointer goes stale on scroll and across pause | **Open**, IN-03 |
+| IN-04 | `uTime` grows without bound | **Open**, IN-04 |
+| IN-05 | Unguarded divide by `uResolution.y` | **Open**, IN-05 |
+| IN-06 | Still paths and dimensions duplicated in `Hero.tsx` | **Resolved** (`Hero.tsx:2-6,26-49`, drift guard in `hero-stills.test.mjs:95-104`); a related residual is filed as IN-09 |
+| IN-07 | Harness CLI input not validated | **Partially resolved**: `--still` now uses `Object.hasOwn`, but `--width/--height/--time` are still unchecked; IN-06 |
+| IN-08 | `engines` allows Node versions that cannot run the scripts | **Open** (`package.json` still `"node": ">=22"`; the file is outside this review's list, so this was checked rather than re-reviewed), IN-07 |
+| IN-09 | `scroll-margin-top` only on two anchors; misleading comment | **Open**, IN-08 |
 
 ## Narrative Findings (AI reviewer)
 
 ## Warnings
 
-### WR-01: Shader compile/link failure is not detected, so an opaque black canvas replaces the still
+### WR-01: The still and the live canvas pick different node tiers near each breakpoint (scrollbar width and fractional widths)
 
-**File:** `src/components/hero/heroScene.ts:92-118`, `src/components/hero/heroScene.ts:155-175`, `src/components/hero/useHeroRenderer.ts:93-111`
-**Issue:** The only fail-invisible path in `useHeroRenderer` is the `try/catch` around `createHeroScene`. ogl's `Program` constructor never throws when a shader fails: compile errors only `console.warn` (`ogl/src/core/Program.js:69,78`), and link failure does `return console.warn(...)` (`Program.js:84-85`). The scene is then created "successfully". `scene.render(0, 0)` clears to the default clear color, and because the canvas uses `alpha: false`, it is opaque black. `setReady(true)` follows, the container fades to `opacity-100` over the still in 800ms, and the pause button mounts. A driver-specific GLSL failure, for example in the 3D simplex noise on some mobile GPUs, therefore swaps the polished still for a flat black hero. That breaks the CLAUDE.md requirement that the page still look polished when WebGL fails.
-**Fix:** Validate each program after construction and throw so the existing catch path runs:
+**File:** `src/components/hero/heroConfig.ts:134-137`, `src/components/sections/Hero.tsx:27-36`, `src/components/hero/useHeroRenderer.ts:88-91,156-159`, `src/components/hero/heroScene.ts:246`
+**Issue:** The two layers measure width differently.
+- The still is chosen by `<source media="(max-width: 767px)">` and `(min-width: 768px) and (max-width: 1023px)`. Media queries measure the viewport **including** the vertical scrollbar.
+- The live tier comes from `nodeCountForWidth(width)`, where `width` is the container's `getBoundingClientRect().width` or `ResizeObserver` `contentRect.width`. The hero is full-bleed, so this is the viewport **minus** the scrollbar.
+
+On Windows and Linux desktop browsers with classic scrollbars (about 15–17px), this causes two kinds of mismatch:
+1. **Viewport about 1024–1040px:** the desktop still (48 nodes) is shown, but the canvas renders the tablet tier (36 nodes). The whole node layout pops during the 800ms crossfade, which is the exact WR-04 symptom 02-07 was meant to remove.
+2. **Viewport about 768–784px:** the tablet still is shown, but the canvas runs the mobile tier (22 nodes). The narrow DPR clamp and the 30fps cap also apply.
+
+Separately, with fractional CSS widths (Windows display scaling, browser zoom, `767 < width < 768`), neither `max-width: 767px` nor `min-width: 768px` matches. The browser then falls back to the **desktop** 1920x1080 still on a mobile-tier canvas.
+
+`hero-stills.test.mjs:69-77` only checks that integer ranges tile, and the harness runs with `--hide-scrollbars`. Neither can catch this.
+**Fix:** Pick the live tier with the same media queries the `<picture>` uses, so the two cannot disagree. Use range syntax so there is no fractional gap:
 ```ts
-function assertLinked(gl: WebGLRenderingContext | WebGL2RenderingContext, p: Program, name: string) {
-  if (!p.program || !gl.getProgramParameter(p.program, gl.LINK_STATUS)) {
-    throw new Error(`hero ${name} program failed to link`);
-  }
-}
-// after each `new Program(...)`:
-assertLinked(gl, program, "gradient");
-assertLinked(gl, pointProgram, "points");
-assertLinked(gl, lineProgram, "lines");
+// heroConfig.ts
+export const HERO_STILL_MEDIA = {
+  mobile: `(width < ${HERO_NARROW_BREAKPOINT_PX}px)`,
+  tablet: `(${HERO_NARROW_BREAKPOINT_PX}px <= width < ${HERO_TABLET_BREAKPOINT_PX}px)`,
+} as const;
+
+// useHeroRenderer.ts — derive the tier width from the viewport, not the container
+const tierWidth = window.matchMedia(HERO_STILL_MEDIA.mobile).matches
+  ? 0
+  : window.matchMedia(HERO_STILL_MEDIA.tablet).matches
+    ? HERO_NARROW_BREAKPOINT_PX
+    : HERO_TABLET_BREAKPOINT_PX;
 ```
-Combine this with WR-02 so that a throw also releases the context.
+Then pass `tierWidth` to the scene as a separate `resize(w, h, tierWidthPx)` argument, used only for `nodeCountForWidth`, `clampDpr`, and `frameIntervalFor`. Update the stills test to assert the range-syntax strings.
 
-### WR-02: A throw partway through `createHeroScene` leaks the WebGL context
+### WR-02: The tablet still is portrait but is served to landscape viewports, so the "bounded shift" claim does not hold
 
-**File:** `src/components/hero/heroScene.ts:92-195`, `src/components/hero/useHeroRenderer.ts:93-111`
-**Issue:** The `Renderer`, and with it a live GL context, is created first. If anything later throws, the context is never released and the hook's catch block only sets `contextLost`. Examples include the WR-01 assertion and the `TypeError` from `gl.shaderSource(null, ...)` when the context is lost during creation, which is common when the browser is near its context limit. Browsers cap live contexts at about 16, and Phase 1 already probes one, so a leaked context makes later context creation evict others.
-**Fix:** Wrap the body of `createHeroScene` after `new Renderer(...)` in a try/catch that calls `renderer.gl?.getExtension("WEBGL_lose_context")?.loseContext()` before rethrowing.
+**File:** `src/components/hero/heroConfig.ts:76-83,99-109`, `src/components/sections/Hero.tsx:32-47`
+**Issue:** The tablet variant is rendered at 820x1180 (aspect about 0.69) and served to every viewport 768–1023px wide. That range also covers:
+- landscape phones (iPhone Pro Max 932x430, Pixel 915x412)
+- iPad mini or Air in landscape split view
+- narrow desktop windows such as 1000x700
 
-### WR-03: The narrow-viewport 30fps cap drops to about 20fps intermittently because of a strict comparison on vsync timestamps
+With `object-cover`, a 0.69-aspect image in a container of about 2.1 aspect keeps only about 33% of its height (the middle band), magnified about 1.2x. The live canvas spreads the same 36 nodes over the whole container. Almost every node and link moves during the crossfade, often by hundreds of pixels; the shift is not "bounded" in any useful sense. The mobile still (aspect 0.46) has the same problem on any wide-but-short sub-768px window.
+
+The heroConfig comment calls this an accepted limitation with a "bounded amount" of shift. That is only true for aspect ratios near each reference size, and no test or harness check measures the bound.
+**Fix:** Do one of the following:
+- Add an orientation axis to the art direction. For example, add a `tablet-landscape` variant at 1000x600@1 with media `(768px <= width < 1024px) and (orientation: landscape)`, and do the same for mobile.
+- Or render each tier's still at a square or landscape reference so that `object-cover` crops less on the off-axis.
+
+Also add a `--verify-stills` case at a non-reference aspect inside each tier, with a looser threshold, so the bound is actually measured. At minimum, correct the comment so it does not claim a small bound.
+
+### WR-03 (carried, still open): The narrow-viewport 30fps cap drops to about 20fps intermittently
 
 **File:** `src/components/hero/useHeroRenderer.ts:277-281`
-**Issue:** `if (intervalMs > 0 && rawDeltaMs < intervalMs)` skips a frame unless at least 33.333ms have passed. On 60Hz, two vsync ticks are about 33.33ms apart, and rAF timestamp jitter puts that delta on either side of `1000/30` at random. When it lands at 33.30ms, the frame is skipped and the next render happens at 50ms. Pacing then alternates irregularly between 30 and 20 fps, which reads as stutter, and 90Hz and 120Hz panels hit the same edge. `lastTimestampRef = timestamp` also discards the remainder, so the error accumulates instead of self-correcting.
-**Fix:** Allow a tolerance and carry the remainder forward:
+**Issue:** This code is unchanged from the prior review. `rawDeltaMs < intervalMs` with `intervalMs = 33.333` skips a frame whenever two 60Hz vsync ticks measure 33.30ms apart because of timestamp jitter. The next render then lands at 50ms, so mobile pacing alternates irregularly between 30 and 20fps. Setting `lastTimestampRef.current = timestamp` throws away the remainder, so the error never self-corrects.
+**Fix:**
 ```ts
-const TOLERANCE_MS = 2;
-if (intervalMs > 0 && rawDeltaMs < intervalMs - TOLERANCE_MS) { /* skip */ }
-lastTimestampRef.current = intervalMs > 0
-  ? timestamp - (rawDeltaMs % intervalMs)
-  : timestamp;
+const FRAME_TOLERANCE_MS = 2;
+if (intervalMs > 0 && rawDeltaMs < intervalMs - FRAME_TOLERANCE_MS) {
+  rafIdRef.current = requestAnimationFrame(frame);
+  return;
+}
+lastTimestampRef.current =
+  intervalMs > 0 ? timestamp - (rawDeltaMs % intervalMs) : timestamp;
 ```
-Keep `rawDeltaMs` itself for `advanceClock`.
+Keep passing `rawDeltaMs` to `advanceClock`.
 
-### WR-04: The pre-rendered stills do not match the live first frame, so the crossfade shows a visible pop (mobile always, desktop at any non-16:9 size)
+### WR-04 (carried, still open): `hero-smoke.mjs` rewrites tracked source and rebuilds as a test side effect, and the multi-width check can be impossible to satisfy
 
-**File:** `scripts/hero-harness.mjs:400-406` (with `buildEntryJs` at 102-110), `src/components/hero/heroConfig.ts:69-76`, `src/components/sections/Hero.tsx:16-34`
-**Issue:** `heroConfig.ts:36-38` and the hook (`useHeroRenderer.ts:116-118`) promise that the still equals the first live frame (D-05/D-06). This only holds when the live canvas is exactly 1920x1080 CSS px:
-1. **Mobile:** the still is rendered at `dpr: 1`, `resize(780, 1688)`. `nodeCountForWidth(780)` returns the tablet tier (36 nodes, since 780 ≥ 768), but the `<picture>` only serves it below 768px, where the live canvas uses 22 nodes. `HERO_LINK_DISTANCE_PX` (170) and `HERO_POINT_SIZE_PX` are also measured against a 780px space in the still but a roughly 390px space live. The node layout, the link set, and the dot size all differ.
-2. **Desktop at a non-16:9 aspect ratio** (for example 1440x900): the still is `object-cover`, so it is scaled and cropped, while live node coordinates are normalized to the full container. Nodes shift by up to about 80px horizontally at 16:10. Link membership also changes, because the 170px threshold is applied to different pixel distances.
+**File:** `scripts/hero-smoke.mjs:384-396,413-450`
+**Issue:** This code is unchanged. When the measured header height does not equal the CSS value, the smoke test does three things:
+1. It runs `writeFileSync(src/app/globals.css)`.
+2. It spawns `npm run build` with no timeout, while its own server is still serving the `out/` that the build is replacing.
+3. It re-measures.
 
-The result is a visible jump in nodes and lines during the 800ms crossfade on most real devices.
-**Fix:** Render the mobile still at its CSS size and scale it up for density. Pass `dpr: 2` and `resize(390, 844)` so the node tier, link distance, and point size match the live mobile path. For desktop, either accept and document that the guarantee only holds at 16:9, or have the live canvas start at a cover-fit projection that matches the still. Then add a harness or smoke assertion that compares the still with a live t=0 frame at a common non-16:9 size.
-
-### WR-05: `hero-smoke.mjs` rewrites a source file and rebuilds as a test side effect, and its multi-width check can be impossible to satisfy
-
-**File:** `scripts/hero-smoke.mjs:384-396`, `scripts/hero-smoke.mjs:413-449`
-**Issue:** When the measured header height differs from the CSS value, the smoke test writes `src/app/globals.css` and spawns `npm run build`, with no timeout, while the server is still serving `out/`. A verification script that silently changes tracked source is a hazard: running it in CI or a pre-push hook leaves a dirty tree, or commits drift. The logic has two more problems:
-- The mismatch condition requires `Math.round(h) === cssValue` at **both** 1440px and 390px. If the header renders at different heights at those widths, which is likely once Phase 3 adds a CTA to the header, no single value satisfies both. The script then rewrites the CSS, rebuilds, and always fails, leaving the modified file behind.
-- The comment-replacement regex only matches the original `73px is the fixed Header height` text. After the first rewrite the comment and the value can drift apart.
-**Fix:** Make the smoke test read-only. Fail with the measured values and a suggested CSS value, and leave the edit to a human or a dedicated `--fix` flag. Compare against `max(measurements)` (scroll-margin only has to clear the tallest header), and allow a ±1px tolerance.
+There are several problems with this:
+- **Unsatisfiable check:** the mismatch test requires `Math.round(h) === cssValue` at **both** 1440px and 390px. If the header height differs between those widths, which becomes likely once Phase 3 adds a header CTA, no single value can pass. The script then always fails and leaves a modified `globals.css` behind.
+- **Comment drift:** the comment-replacement regex (line 392) only matches the original "73px is the fixed Header height" text, so after one rewrite the comment and the value drift apart.
+- **Dirty tree:** a verification script that edits tracked source is a CI and pre-push hazard.
+**Fix:** Make the check read-only, with a ±1px tolerance:
+```js
+const required = Math.ceil(Math.max(...widths.map((w) => measurements[w])));
+if (Math.abs(required - cssValue) > 1) {
+  fail(`scroll-margin-top is ${cssValue}px but the tallest header measured ${required}px — update globals.css`);
+}
+```
+If auto-fixing is still wanted, put it behind an explicit `--fix` flag.
 
 ## Info
 
-### IN-01: DPR is captured once at mount and never recomputed
+### IN-01 (carried): DPR is captured once at mount and never recomputed
 
-**File:** `src/components/hero/useHeroRenderer.ts:94-103`, `src/components/hero/heroScene.ts:162`
-**Issue:** `clampDpr` runs with the width at mount. If the visitor resizes across the 768px breakpoint, or moves the window to a monitor with a different `devicePixelRatio`, the canvas keeps the old DPR and stays at the old cap. Narrowing keeps DPR at 2 on mobile widths, which defeats the perf clamp; widening keeps 1.5, which is blurry. `uPointSize` is also fixed at the old DPR.
-**Fix:** In the ResizeObserver callback, recompute `clampDpr`, set `renderer.dpr`, and update `uPointSize` before `resize()`. Optionally also listen to `matchMedia(\`(resolution: ${dpr}dppx)\`)` changes.
+**File:** `src/components/hero/useHeroRenderer.ts:94-103`, `src/components/hero/heroScene.ts:159`
+**Issue:** `clampDpr` uses the width at mount. If the window is resized across 768px, or moved to a monitor with a different `devicePixelRatio`, the canvas keeps the old DPR cap. `uPointSize` also stays tied to the old DPR. Note that `frameIntervalFor` already re-reads `widthRef` each frame, so the fps cap does follow a resize, but the DPR does not.
+**Fix:** In the ResizeObserver callback, recompute `clampDpr`. If it changed, set `renderer.dpr`, update `uPointSize`, and then call `resize()`. Both setters would need to be exposed on `HeroScene`.
 
-### IN-02: Context-loss state reaches the scene and the callbacks late
+### IN-02 (carried): Context-loss state reaches the callbacks late, and `destroy()` calls `loseContext()` on an already-lost context
 
-**File:** `src/components/hero/useHeroRenderer.ts:48-68`, `src/components/hero/useHeroRenderer.ts:124-133`, `src/components/hero/heroScene.ts:217-218,246-249`
-**Issue:** `contextLostRef` is mirrored through a passive `useEffect`, so the ResizeObserver can still call `render()` on a lost context during that window. The scene's internal `contextLost` flag only means "destroyed" and is never set on a real loss. At unmount, `destroy()` therefore calls `loseContext()` on an already-lost context, which raises GL `INVALID_OPERATION` (harmless but noisy).
-**Fix:** Set `contextLostRef.current = true` synchronously inside `onContextLost`, and give the scene a `markLost()` method (or have it listen to `webglcontextlost` itself) so its `render`/`destroy` guards cover real losses.
+**File:** `src/components/hero/useHeroRenderer.ts:57-59,124-133`, `src/components/hero/heroScene.ts:258-291`
+**Issue:**
+- `contextLostRef` is updated in a passive effect, so the ResizeObserver can still call `render()` on a lost context in between.
+- The scene's internal `contextLost` flag only means "destroyed" and is never set on a real loss.
+- At unmount after a real loss, `destroy()` calls `loseContext()` again, which raises GL `INVALID_OPERATION`. This is harmless but noisy.
+**Fix:** Set `contextLostRef.current = true` synchronously in `onContextLost`. Also check `gl.isContextLost()` in `render()` and `destroy()`, or add a `markLost()` method.
 
-### IN-03: The pointer position goes stale on scroll and across a pause
+### IN-03 (carried): The pointer position goes stale on scroll and across a pause
 
-**File:** `src/components/hero/useHeroRenderer.ts:176-188`, `src/components/hero/useHeroRenderer.ts:209-212`
-**Issue:** The pointer is only updated on `pointermove`. A wheel scroll without moving the mouse leaves the attraction point at old container coordinates. `updatePointerFromPoint` also returns early while paused, so after resuming, nodes are pulled toward wherever the cursor was before the pause until the next move.
-**Fix:** Clear the pointer (`setPointer(null, null)`) on `scroll` (passive) and when pausing.
+**File:** `src/components/hero/useHeroRenderer.ts:176-188,209`
+**Issue:** The pointer only updates on `pointermove`. A wheel scroll leaves the attraction point at old container coordinates. While paused, `updatePointerFromPoint` returns early, so on resume the nodes are pulled toward the pre-pause cursor position.
+**Fix:** Call `setPointer(null, null)` on a passive `scroll` listener and when `paused` becomes true.
 
-### IN-04: `uTime` grows without bound, so the gradient steps on mediump-only GPUs
+### IN-04 (carried): `uTime` grows without bound, so the gradient steps on mediump-only GPUs
 
-**File:** `src/components/hero/useHeroRenderer.ts:282-288`, `src/components/hero/shaders.ts:137`
-**Issue:** The fragment shader falls back to `mediump` (fp16 on some mobile GPUs). After about 17 minutes, `uTime` exceeds 1024 and fp16 resolution becomes coarser than about 1s, so the gradient advances in visible steps. The gradient is exactly periodic in `uCycle`.
-**Fix:** In `heroScene.render`, pass `timeSeconds % HERO_CYCLE_SECONDS` to `uTime`. Keep the unwrapped time for `stepNodes`.
+**File:** `src/components/hero/heroScene.ts:260`, `src/components/hero/shaders.ts:137`
+**Issue:** The fragment shader falls back to `mediump` (fp16 on some mobile GPUs). After about 17 minutes, `uTime / uCycle` loses enough precision that the gradient advances in visible steps.
+**Fix:** `program.uniforms.uTime.value = timeSeconds % HERO_CYCLE_SECONDS;` The gradient is exactly periodic in `uCycle`. Keep the unwrapped time for `stepNodes`.
 
-### IN-05: The gradient shader divides by `uResolution.y` with no guard
+### IN-05 (carried): The gradient shader divides by `uResolution.y` with no guard
 
-**File:** `src/components/hero/shaders.ts:131`, `src/components/hero/heroScene.ts:202`
-**Issue:** If the container measures 0px high at mount (the first `resize` uses `getBoundingClientRect`), `aspect` is `inf/NaN` and the t=0 frame is garbage until the ResizeObserver corrects it. The `hidden` class applied on context loss also produces a 0x0 resize.
-**Fix:** In the shader, use `max(uResolution.y, 1.0)`. Or skip `resize`/`render` when width or height is 0.
+**File:** `src/components/hero/shaders.ts:131`, `src/components/hero/heroScene.ts:238-243`
+**Issue:** A container that is 0px high at mount, or the 0x0 ResizeObserver callback after `hidden` is applied on context loss, gives `aspect = inf/NaN`.
+**Fix:** In the shader, use `uResolution.x / max(uResolution.y, 1.0)`. Or return early from `resize()` and `render()` when `width` or `height` is 0.
 
-### IN-06: Still paths and dimensions are duplicated between `heroConfig.ts` and `Hero.tsx`
+### IN-06 (carried, partial): Harness `--width/--height/--time` are not validated
 
-**File:** `src/components/sections/Hero.tsx:19,27-30`, `src/components/hero/heroConfig.ts:69-76`
-**Issue:** `Hero.tsx` hardcodes `/hero/hero-still-*.webp` and `1920x1080`. If the harness falls back to the 85%-scale tier (`hero-harness.mjs:362-365`) or the sizes change, these values drift silently.
-**Fix:** Derive `src`, `width`, and `height` from `HERO_STILL_SIZES` and `HERO_STILL_PATHS`, or a public-path variant of them.
+**File:** `scripts/hero-harness.mjs:77-79,141-142`
+**Issue:** `Number("abc")` gives `NaN`. That value goes into `--window-size=NaN,NaN` and is interpolated into the generated `scene.render(NaN, 0)`, which causes confusing downstream failures. 02-07 fixed only the `--still` lookup.
+**Fix:** `if (![width, height].every((n) => Number.isFinite(n) && n > 0) || !Number.isFinite(time)) { console.error(...); process.exit(1); }`
 
-### IN-07: The harness does not validate its CLI input
+### IN-07 (carried): `engines` allows Node versions that cannot run the test and harness scripts
 
-**File:** `scripts/hero-harness.mjs:60-62`, `scripts/hero-harness.mjs:440-446`
-**Issue:** `--width/--height/--time` are passed through `Number()` without checks. `NaN` flows into `--window-size` and `scene.render(NaN, 0)`, producing confusing failures. `HERO_STILL_SIZES[v]` accepts prototype keys such as `--still constructor`. The script is dev-only, so the impact is low.
-**Fix:** Reject non-finite or non-positive numbers, and use `Object.hasOwn(HERO_STILL_SIZES, v)`.
-
-### IN-08: `engines` allows Node versions that cannot run the new scripts
-
-**File:** `package.json:5-7,13-14`
-**Issue:** `npm test` needs `--experimental-strip-types` (Node ≥22.6), and `hero:render` imports `stripTypeScriptTypes` from `node:module` (Node ≥22.13). `"node": ">=22"` permits 22.0–22.12.
+**File:** `package.json:5-7,13-14` (outside this review's file list; checked only)
+**Issue:** `--experimental-strip-types` requires Node ≥22.6, and `stripTypeScriptTypes` (`hero-harness.mjs:32`) requires Node ≥22.13. `"node": ">=22"` still permits 22.0–22.12.
 **Fix:** Set `"engines": { "node": ">=22.13" }`, and pin `.nvmrc` to match.
 
-### IN-09: Only the two new anchors get `scroll-margin-top`, and the comment misdescribes the value
+### IN-08 (carried): Only `#employers`/`#candidates` get `scroll-margin-top`, and the comment misdescribes the value
 
 **File:** `src/app/globals.css:39-46`
-**Issue:** The header links `/#services`, `/#expertise`, and `/#contact` still land under the fixed header. The comment says "73px is the fixed Header height ... plus the UI-SPEC 16px buffer", but the buffer is the separate `+ 1rem`.
-**Fix:** Apply the rule to `section[id]` as well (or to `:target`), and reword the comment to "73px header height; +1rem buffer".
+**Issue:** `/#services`, `/#expertise`, and `/#contact` still land under the fixed header. The comment says 73px includes the 16px buffer, but the buffer is the separate `+ 1rem`.
+**Fix:** Apply the rule to `section[id], #employers, #candidates`, and change the comment to "73px header height; +1rem buffer".
+
+### IN-09: The 85%-scale WebP fallback silently produces a still whose dimensions disagree with `HERO_STILL_SIZES`
+
+**File:** `scripts/hero-harness.mjs:531-571,628-639,656-659`
+**Issue:** If a still exceeds the size budget at quality 40, `encodeStillWebp` re-encodes it at 85% scale and `renderStill` only logs the smaller dimensions. Two things then break:
+- `--verify-stills` decodes the committed WebP with the config dimensions (`size.width`/`size.height`) and throws a confusing byte-length mismatch instead of reporting the real cause.
+- `Hero.tsx` keeps advertising `width`/`height` from config. Only the aspect ratio matters there, but the test's dimension contract (`hero-stills.test.mjs:60-67`) is no longer true for the shipped asset.
+**Fix:** In `renderStill`, fail (or warn loudly and exit non-zero) when `result.width !== size.width`. Alternatively, have `--verify-stills` read the real WebP dimensions with `ffprobe` and upscale before comparing.
+
+### IN-10: `--verify-stills` compares against a live frame at a DPR that production never uses on that tier
+
+**File:** `scripts/hero-harness.mjs:599-608,650-654`, `src/components/hero/heroConfig.ts:93,116`, `src/components/hero/renderLoop.ts:49-58`
+**Issue:** The mobile still and its "live" verification frame are both rendered at dpr 2. Production clamps narrow viewports to `HERO_DPR_MAX_NARROW = 1.5`. The desktop still is dpr 1, but retina desktops render live at dpr 2. Point sizes are in CSS px, so they match. `gl.LINES` are always 1 device pixel wide, however, so link thickness differs between the still and the live canvas by 1.33–2x. The verify step passes even though it never exercises the real production configuration.
+**Fix:** In `verifyStills`, render the live frame at `clampDpr(size.dpr, size.cssWidth, ...)` and downscale both frames to a common size before comparing. Otherwise, document that the parity guarantee excludes line weight.
+
+### IN-11: Services cards scale on hover regardless of `prefers-reduced-motion`
+
+**File:** `src/components/sections/Services.tsx:9,16`
+**Issue:** `transition-all duration-300 hover:scale-105` animates a transform with no reduced-motion guard. CLAUDE.md requires respecting `prefers-reduced-motion`. The `className="text-brand"` on the `<Image>` elements (lines 11, 18) has no effect on an `<img>` SVG.
+**Fix:** Use `motion-safe:hover:scale-105 motion-safe:transition-transform`, and drop the no-op `text-brand`.
+
+### IN-12: Site metadata and section copy contradict the healthcare positioning in the new hero
+
+**File:** `src/app/layout.tsx:12-13`, `src/components/sections/Expertise.tsx:8-30,60-75`, `src/components/sections/Services.tsx:13-14`
+**Issue:**
+- The `<title>` and description ("Technical Recruitment Specialist", "leading technology companies") are what search results and link previews show. They contradict the hero ("healthcare, behavioral health, and healthcare admin teams").
+- The "I'm looking for work" chooser (`#candidates`) lands on an "Our Expertise" block that leads with software, cloud, and AI roles.
+**Fix:** Update the `metadata` title and description to the healthcare and behavioral-health positioning now. If the section copy is deferred to Phase 3, track it explicitly there.
 
 ---
 
