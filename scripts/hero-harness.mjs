@@ -10,6 +10,7 @@
 //                                [--out path.png] [--check]
 //                                [--layers all|gradient] [--diff-against path.png]
 //                                [--still desktop|mobile|all]
+//                                [--break-shader gradient|points|lines]
 
 import { parseArgs } from "node:util";
 import { createServer } from "node:http";
@@ -54,6 +55,7 @@ const { values: args } = parseArgs({
     layers: { type: "string", default: "all" },
     "diff-against": { type: "string" },
     still: { type: "string" },
+    "break-shader": { type: "string" },
   },
 });
 
@@ -63,6 +65,21 @@ const time = Number(args.time);
 const layers = args.layers;
 if (layers !== "all" && layers !== "gradient") {
   console.error(`Bad --layers value: ${layers} (expected "all" or "gradient")`);
+  process.exit(1);
+}
+
+// T-02-G3: --break-shader only ever maps to one of these three fixed export
+// names; the value is never interpolated into a file path or module name.
+const BREAK_SHADER_EXPORT_NAMES = {
+  gradient: "gradientFragmentShader",
+  points: "nodePointFragmentShader",
+  lines: "nodeLineFragmentShader",
+};
+const breakShader = args["break-shader"];
+if (breakShader !== undefined && !Object.hasOwn(BREAK_SHADER_EXPORT_NAMES, breakShader)) {
+  console.error(
+    `Bad --break-shader value: ${breakShader} (expected "gradient", "points", or "lines")`,
+  );
   process.exit(1);
 }
 const outPath = args.out
@@ -124,7 +141,47 @@ window.addEventListener("unhandledrejection", (event) => {
 `;
 }
 
-function startServer(w, h, t, layersArg) {
+// Failure-mode entry script (--break-shader only). Wraps
+// HTMLCanvasElement.prototype.getContext *before* createHeroScene runs so
+// the WebGL context ogl's Renderer creates is captured, then proves (a)
+// createHeroScene() throws once the server-side shader wrapper makes one
+// program fail to link, and (b) the captured context is lost afterwards
+// (REVIEW WR-01/WR-02). heroScene is imported dynamically so its module body
+// is only evaluated after the getContext wrapper is installed.
+function buildBreakShaderEntryJs() {
+  return `
+import { HERO_SEED } from "/hero/heroConfig";
+
+let capturedCtx = null;
+const originalGetContext = HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+  const ctx = originalGetContext.call(this, type, ...rest);
+  if (ctx && typeof type === "string" && type.indexOf("webgl") !== -1) {
+    capturedCtx = ctx;
+  }
+  return ctx;
+};
+
+(async () => {
+  try {
+    const { createHeroScene } = await import("/hero/heroScene");
+    createHeroScene({
+      dpr: 1,
+      seed: HERO_SEED,
+      preserveDrawingBuffer: true,
+      layers: "all",
+    });
+    document.title = "HERO_UNEXPECTED_SUCCESS";
+  } catch (err) {
+    const message = err && err.message ? err.message : String(err);
+    const lost = capturedCtx ? capturedCtx.isContextLost() : "noctx";
+    document.title = "HERO_EXPECTED_FAILURE:" + message + ":lost=" + String(lost);
+  }
+})();
+`;
+}
+
+function startServer(w, h, t, layersArg, breakShaderArg) {
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
       try {
@@ -147,7 +204,23 @@ function startServer(w, h, t, layersArg) {
 
         if (pathname === "/entry.js") {
           res.writeHead(200, { "Content-Type": "text/javascript" });
-          res.end(buildEntryJs(w, h, t, layersArg));
+          res.end(
+            breakShaderArg ? buildBreakShaderEntryJs() : buildEntryJs(w, h, t, layersArg),
+          );
+          return;
+        }
+
+        // --break-shader only (T-02-G3): serves the real, unmodified
+        // shaders.ts under a second, hardcoded path so the synthesized
+        // /hero/shaders wrapper below can re-export everything else from it
+        // unbroken. Inactive (404s, same as any other unknown path) unless
+        // --break-shader is set.
+        if (breakShaderArg && pathname === "/hero-real/shaders") {
+          const filePath = path.join(HERO_DIR, "shaders.ts");
+          const source = await readFile(filePath, "utf8");
+          const stripped = stripTypeScriptTypes(source, { mode: "strip" });
+          res.writeHead(200, { "Content-Type": "text/javascript" });
+          res.end(stripped);
           return;
         }
 
@@ -157,6 +230,19 @@ function startServer(w, h, t, layersArg) {
           if (!MODULE_NAME_RE.test(name)) {
             res.writeHead(400, { "Content-Type": "text/plain" });
             res.end("Bad Request: invalid module name");
+            return;
+          }
+          if (breakShaderArg && name === "shaders") {
+            // ES module semantics: this local `export const` shadows the
+            // same-named export coming through the `export *` re-export of
+            // the real module, so every other shader string passes through
+            // unchanged and only the targeted one breaks.
+            const mappedName = BREAK_SHADER_EXPORT_NAMES[breakShaderArg];
+            const wrapper =
+              `export * from "/hero-real/shaders";\n` +
+              `export const ${mappedName} = "void main() { this_is_not_glsl; }";\n`;
+            res.writeHead(200, { "Content-Type": "text/javascript" });
+            res.end(wrapper);
             return;
           }
           const filePath = path.join(HERO_DIR, `${name}.ts`);
@@ -202,8 +288,8 @@ async function runChrome(chromeArgs) {
   });
 }
 
-async function renderOnce(serverUrl, w, h, outFile) {
-  const baseFlags = [
+function chromeBaseFlags(w, h) {
+  return [
     "--headless=new",
     "--no-sandbox",
     "--use-angle=swiftshader",
@@ -212,6 +298,10 @@ async function renderOnce(serverUrl, w, h, outFile) {
     `--window-size=${w},${h}`,
     "--virtual-time-budget=8000",
   ];
+}
+
+async function renderOnce(serverUrl, w, h, outFile) {
+  const baseFlags = chromeBaseFlags(w, h);
 
   let dumpResult;
   try {
@@ -435,7 +525,50 @@ async function renderStill(variant) {
   }
 }
 
+// --break-shader only: proves in real headless Chrome (not just the fake-gl
+// unit tests in scripts/hero-gl-guards.test.mjs) that a genuine compile/link
+// failure in the targeted program makes createHeroScene() throw with the
+// expected message and leaves the WebGL context lost. Takes no screenshot
+// and writes no file.
+async function runBreakShaderCheck(name) {
+  const server = await startServer(1920, 1080, 0, "all", name);
+  const { port } = server.address();
+  const serverUrl = `http://127.0.0.1:${port}/`;
+
+  try {
+    const baseFlags = chromeBaseFlags(1920, 1080);
+    let dumpResult;
+    try {
+      dumpResult = await runChrome([...baseFlags, "--dump-dom", serverUrl]);
+    } catch (err) {
+      throw new Error(`Chrome --dump-dom invocation failed: ${err.message}`);
+    }
+    const titleMatch = /<title>([^<]*)<\/title>/i.exec(dumpResult.stdout);
+    const title = titleMatch ? titleMatch[1] : "(no <title> found in DOM dump)";
+    const expected = `HERO_EXPECTED_FAILURE:hero ${name} program failed to link:lost=true`;
+
+    if (title !== expected) {
+      console.error(title);
+      process.exitCode = 1;
+      return;
+    }
+    console.log(JSON.stringify({ breakShader: name, ok: true, title }));
+  } finally {
+    server.close();
+  }
+}
+
 async function main() {
+  if (breakShader) {
+    try {
+      await runBreakShaderCheck(breakShader);
+    } catch (err) {
+      console.error(err && err.message ? err.message : String(err));
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   if (args.still) {
     const variants = args.still === "all" ? ["desktop", "mobile"] : [args.still];
     for (const v of variants) {
